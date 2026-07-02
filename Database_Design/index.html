@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 2: Database Design & Architecture Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --bg-card: #131a2b;
+            --bg-hover: #1c263e;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-pink: #ec4899;
+            --accent-yellow: #f59e0b;
+            --border: rgba(255, 255, 255, 0.08);
+            --glow: rgba(139, 92, 246, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(6, 182, 212, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.08) 0px, transparent 60%);
+        }
+
+        .header {
+            padding: 4rem 2rem 2rem;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.25rem;
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 9999px;
+            color: #c4b5fd;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto 4rem;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--card-accent);
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px -15px var(--card-glow);
+            background: var(--bg-hover);
+        }
+
+        .card-slides {
+            --card-accent: linear-gradient(90deg, #3b82f6, #06b6d4);
+            --card-glow: rgba(59, 130, 246, 0.25);
+        }
+
+        .card-notes {
+            --card-accent: linear-gradient(90deg, #10b981, #f59e0b);
+            --card-glow: rgba(16, 185, 129, 0.25);
+        }
+
+        .card-interview {
+            --card-accent: linear-gradient(90deg, #8b5cf6, #ec4899);
+            --card-glow: rgba(139, 92, 246, 0.25);
+        }
+
+        .icon-wrapper {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #fff;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .features-list {
+            list-style: none;
+            margin-bottom: 2.5rem;
+        }
+
+        .features-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-main);
+            font-size: 0.88rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .features-list li::before {
+            content: '✓';
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .card:hover .btn {
+            background: #fff;
+            color: #000;
+        }
+
+        .curriculum-section {
+            max-width: 1200px;
+            margin: 0 auto 4rem;
+            padding: 0 2rem;
+        }
+
+        .curriculum-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 3rem;
+        }
+
+        .curriculum-box h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .grid-topics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .topic-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .topic-item h3 {
+            font-size: 1.05rem;
+            color: var(--accent-cyan);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .topic-item p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .nav-back {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .nav-back a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-back a:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="badge">Enterprise Engineering Curriculum</div>
+        <h1>Stage 2: Database Design & Architecture</h1>
+        <p class="subtitle">Master ERDs, Normalization, Referential Integrity, System Design Patterns, and Enterprise Schema Migrations through interactive code and visual theory.</p>
+    </header>
+
+    <main class="container">
+        <!-- Interactive Slides -->
+        <a href="slides/index.html" class="card card-slides">
+            <div>
+                <div class="icon-wrapper">📐</div>
+                <h2>Interactive Schema Studio</h2>
+                <p>Live visual ERD modeling, normalization sandbox, and real-time SQLite DDL execution with referential integrity toggles.</p>
+                <ul class="features-list">
+                    <li>Visual ERD to DDL conversion examples</li>
+                    <li>Live 1NF → 2NF → 3NF → BCNF step-by-step refactoring</li>
+                    <li>Interactive CASCADE vs RESTRICT integrity tests</li>
+                    <li>Live schema migration & versioning simulator</li>
+                </ul>
+            </div>
+            <div class="btn">
+                <span>Launch Interactive Studio</span>
+                <span>→</span>
+            </div>
+        </a>
+
+        <!-- Handwritten Notes -->
+        <a href="notes/index.html" class="card card-notes">
+            <div>
+                <div class="icon-wrapper">📝</div>
+                <h2>Handwritten Visual Notes</h2>
+                <p>Aesthetic handwritten notebook with colorful highlighter accents, diagrams, comparison matrices, and print-ready layout.</p>
+                <ul class="features-list">
+                    <li>Color-coded highlighter annotations</li>
+                    <li>Keys breakdown (Surrogate vs Natural vs Composite)</li>
+                    <li>OLTP vs OLAP Denormalization trade-offs</li>
+                    <li>Enterprise naming conventions & seed data rules</li>
+                </ul>
+            </div>
+            <div class="btn">
+                <span>Read Course Notes</span>
+                <span>→</span>
+            </div>
+        </a>
+
+        <!-- System Design & Interview Q&A -->
+        <a href="interview/index.html" class="card card-interview">
+            <div>
+                <div class="icon-wrapper">🎯</div>
+                <h2>System Design & Interview Q&A</h2>
+                <p>100+ deep interview questions, situation-based architecture challenges, real-world schemas, and recruiter presentation tips.</p>
+                <ul class="features-list">
+                    <li>Real-world schema designs (E-commerce, Ride Share, Ledger)</li>
+                    <li>Polymorphic vs Exclusive FK design trade-offs</li>
+                    <li>Multi-tenancy & Soft Delete architectural patterns</li>
+                    <li>Recruiter STAR storytelling tips for senior roles</li>
+                </ul>
+            </div>
+            <div class="btn">
+                <span>Practice Interview Questions</span>
+                <span>→</span>
+            </div>
+        </a>
+    </main>
+
+    <section class="curriculum-section">
+        <div class="curriculum-box">
+            <h2>Complete Stage 2 Syllabus</h2>
+            <div class="grid-topics">
+                <div class="topic-item">
+                    <h3>📊 ERD Modeling</h3>
+                    <p>Entities, Attributes, Relationships (1:1, 1:M, M:N), Association Tables, and Crow's Foot notation mapping.</p>
+                </div>
+                <div class="topic-item">
+                    <h3>🔑 Key Architecture</h3>
+                    <p>Primary, Foreign, Composite, Candidate, Alternate Keys. Deep dive into Surrogate (UUIDv7/Snowflake) vs Natural Keys.</p>
+                </div>
+                <div class="topic-item">
+                    <h3>🛡️ Constraints & Integrity</h3>
+                    <p>NOT NULL, UNIQUE, CHECK, DEFAULT. Referential actions: CASCADE, RESTRICT, SET NULL, NO ACTION.</p>
+                </div>
+                <div class="topic-item">
+                    <h3>🧼 Normalization (1NF - 5NF)</h3>
+                    <p>Eliminating insertion, deletion, and update anomalies. Step-by-step normal form decomposition up to BCNF and 4NF/5NF.</p>
+                </div>
+                <div class="topic-item">
+                    <h3>⚡ Denormalization & OLAP</h3>
+                    <p>Strategic redundancy for read-heavy scale. Star vs Snowflake schema design for data warehouses.</p>
+                </div>
+                <div class="topic-item">
+                    <h3>🚀 Migrations & Lifecycle</h3>
+                    <p>Up/Down migration scripts, blue-green deployment schemas, rollback safety, and idempotent seeding.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="nav-back">
+        <a href="../index.html">← Back to Main RDBMS Mastery Hub</a> | <a href="../SQL_Fundamentals/index.html">Go to Stage 1: SQL Fundamentals</a>
+    </div>
+
+</body>
+</html>

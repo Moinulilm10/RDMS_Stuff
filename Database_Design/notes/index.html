@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 2 Complete Architectural Notebook & Visual Course Notes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Patrick+Hand&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper-bg: #fefcf7;
+            --paper-line: rgba(180, 200, 230, 0.4);
+            --margin-line: #ff8b8b;
+            --ink: #1e293b;
+            --ink-muted: #475569;
+            
+            /* Highlighter Palette */
+            --hl-pink: #ffe4e6;
+            --hl-pink-border: #f1f5f9;
+            --hl-yellow: #fef9c3;
+            --hl-green: #dcfce7;
+            --hl-blue: #e0f2fe;
+            --hl-purple: #f3e8ff;
+
+            /* Sticky Notes */
+            --sticky-bg: #fffef0;
+            --sticky-border: #fde047;
+
+            /* Code box */
+            --code-bg: #0f172a;
+            --code-text: #f8fafc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #0f172a;
+            color: var(--ink);
+            font-family: 'Patrick Hand', cursive;
+            font-size: 1.35rem;
+            line-height: 1.85;
+            padding: 3rem 1.5rem;
+        }
+
+        /* Layout Container */
+        .layout-grid {
+            max-width: 1350px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2.5rem;
+            align-items: start;
+        }
+
+        /* Sidebar Navigation */
+        .notebook-nav {
+            background: #1e293b;
+            color: #f8fafc;
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: sticky;
+            top: 2rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .notebook-nav h2 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #38bdf8;
+            margin-bottom: 1.2rem;
+            font-weight: 800;
+        }
+
+        .notebook-nav ul { list-style: none; }
+        .notebook-nav li { margin-bottom: 0.6rem; }
+        .notebook-nav a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            display: block;
+            padding: 0.4rem 0.75rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .notebook-nav a:hover {
+            background: rgba(56, 189, 248, 0.15);
+            color: #fff;
+            transform: translateX(4px);
+        }
+
+        .nav-home-btn {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-home-btn a {
+            background: #8b5cf6;
+            color: #fff !important;
+            text-align: center;
+            padding: 0.65rem;
+            border-radius: 10px;
+        }
+
+        /* Notebook Page */
+        .notebook-page {
+            background-color: var(--paper-bg);
+            background-image: 
+                linear-gradient(90deg, transparent 79px, var(--margin-line) 79px, var(--margin-line) 81px, transparent 81px),
+                linear-gradient(var(--paper-line) 1px, transparent 1px);
+            background-size: 100% 2.2rem;
+            border-radius: 8px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+            padding: 3rem 4rem 4rem 7rem;
+            position: relative;
+        }
+
+        /* Spiral Ring Binding Graphic */
+        .notebook-page::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 35px;
+            background-image: radial-gradient(circle at center, #0f172a 8px, transparent 9px);
+            background-size: 100% 2.2rem;
+            background-position: 0 0.5rem;
+        }
+
+        h1 {
+            font-family: 'Caveat', cursive;
+            font-size: 3.5rem;
+            color: #0f172a;
+            line-height: 1.1;
+            margin-bottom: 0.5rem;
+            border-bottom: 3px solid #0f172a;
+            padding-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-family: 'Caveat', cursive;
+            font-size: 2.6rem;
+            color: #1e40af;
+            margin-top: 3.5rem;
+            margin-bottom: 1rem;
+            padding-top: 1rem;
+            border-top: 2px dashed rgba(30, 64, 175, 0.2);
+        }
+
+        h3 {
+            font-family: 'Caveat', cursive;
+            font-size: 2rem;
+            color: #9333ea;
+            margin-top: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p { margin-bottom: 1.2rem; }
+
+        /* Highlighters */
+        .hl {
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .hl-pink { background-color: var(--hl-pink); border-bottom: 2px solid #f43f5e; }
+        .hl-yellow { background-color: var(--hl-yellow); border-bottom: 2px solid #eab308; }
+        .hl-green { background-color: var(--hl-green); border-bottom: 2px solid #22c55e; }
+        .hl-blue { background-color: var(--hl-blue); border-bottom: 2px solid #0ea5e9; }
+        .hl-purple { background-color: var(--hl-purple); border-bottom: 2px solid #a855f7; }
+
+        /* Problem vs Solution Callouts */
+        .callout-problem {
+            background: #fff1f2;
+            border-left: 5px solid #e11d48;
+            padding: 1.2rem 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.5rem 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #881337;
+        }
+        .callout-problem strong {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #be123c;
+            font-size: 1.05rem;
+            margin-bottom: 0.4rem;
+            font-family: 'Caveat', cursive;
+            font-size: 1.6rem;
+        }
+
+        .callout-solution {
+            background: #f0fdf4;
+            border-left: 5px solid #16a34a;
+            padding: 1.2rem 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.5rem 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #14532d;
+        }
+        .callout-solution strong {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #15803d;
+            margin-bottom: 0.4rem;
+            font-family: 'Caveat', cursive;
+            font-size: 1.6rem;
+        }
+
+        /* Code Snippets */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .code-label {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #38bdf8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        /* Sticky Notes */
+        .sticky-note {
+            background: var(--sticky-bg);
+            border: 1px solid var(--sticky-border);
+            padding: 1.5rem;
+            border-radius: 4px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            transform: rotate(-1deg);
+            margin: 2rem 0;
+            font-family: 'Caveat', cursive;
+            font-size: 1.6rem;
+            line-height: 1.4;
+            color: #713f12;
+        }
+
+        /* Comparison Tables */
+        .notes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.88rem;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .notes-table th {
+            background: #1e293b;
+            color: #fff;
+            padding: 0.9rem 1.2rem;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .notes-table td {
+            padding: 0.9rem 1.2rem;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        .notes-table tr:last-child td { border-bottom: none; }
+        .notes-table tr:nth-child(even) { background: #f8fafc; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .notebook-nav { display: none; }
+            .layout-grid { grid-template-columns: 1fr; }
+            .notebook-page { box-shadow: none; border: none; padding: 2rem 2rem 2rem 4rem; }
+            .code-box { break-inside: avoid; }
+            .callout-problem, .callout-solution, .sticky-note { break-inside: avoid; }
+        }
+
+        @media (max-width: 1024px) {
+            .layout-grid { grid-template-columns: 1fr; }
+            .notebook-nav { position: relative; top: 0; }
+            .notebook-page { padding: 2rem 1.5rem 2rem 4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="layout-grid">
+    <!-- Sidebar Navigation -->
+    <nav class="notebook-nav">
+        <h2>📑 Stage 2 Index</h2>
+        <ul>
+            <li><a href="#mod1">1. ERD & Relational Entities</a></li>
+            <li><a href="#mod2">2. Key Architecture & IDs</a></li>
+            <li><a href="#mod3">3. Domain Constraints & FKs</a></li>
+            <li><a href="#mod4">4. Normalization (1NF to 5NF)</a></li>
+            <li><a href="#mod5">5. Denormalization & OLAP</a></li>
+            <li><a href="#mod6">6. Migrations & DDL Lifecycle</a></li>
+            <li><a href="#mod7">7. Enterprise Design Patterns</a></li>
+        </ul>
+        <div class="nav-home-btn">
+            <a href="../index.html">← Back to Stage 2 Hub</a>
+        </div>
+    </nav>
+
+    <!-- Main Notebook Paper -->
+    <main class="notebook-page">
+        <h1>📐 Database Design & Architecture</h1>
+        <div class="subtitle">Complete Senior Engineer Handwritten Visual Notes · Print Ready</div>
+
+        <div class="sticky-note">
+            💡 <strong>Pro-Tip for Interviews:</strong> Never just draw boxes and arrows! Always explain *why* a relationship or normal form solves a specific real-world race condition, locking bottleneck, or data anomaly!
+        </div>
+
+        <!-- MODULE 1 -->
+        <section id="mod1">
+            <h2>Module 1: ERD & Relational Entities</h2>
+            <p>An <span class="hl hl-pink">Entity Relationship Diagram (ERD)</span> is the blueprint translating business domain rules into storage structures before writing SQL schema code.</p>
+
+            <h3>1.1 One-to-One (1:1) Relationships</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Table Bloat & Security Exposure</strong>
+                If you put 50 columns inside `users`—including password hashes, Social Security Numbers (SSNs), and 10MB user bio markdown files—every single login check or profile query loads bloated data into memory and risks leaking PII to backend queries.
+            </div>
+            <div class="callout-solution">
+                <strong>✅ Architectural Solution: Vertical Partitioning</strong>
+                Isolate heavy or highly classified PII attributes into a separate child table linked by a Primary Key that doubles as a Foreign Key (`user_id`).
+            </div>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: 1:1 KYC Security Isolation</span>
+CREATE TABLE users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    account_status VARCHAR(32) DEFAULT 'ACTIVE'
+);
+
+-- Child table shares identical user_id PK/FK:
+CREATE TABLE user_kyc_pii (
+    user_id INTEGER PRIMARY KEY,
+    ssn_encrypted VARCHAR(512) NOT NULL UNIQUE,
+    tax_id VARCHAR(64) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);</div>
+
+            <h3>1.2 One-to-Many (1:M) Relationships</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Repeating Data Duplication</strong>
+                In E-commerce, if one order has 10 line items, storing everything in one flat table repeats the customer's name, email, and shipping address 10 times!
+            </div>
+            <p>In 1:M architecture, the Foreign Key column ALWAYS resides on the <span class="hl hl-green">Many (&lt;) child side</span> pointing to the parent's unique ID.</p>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: 1:M Order Line Items</span>
+CREATE TABLE orders (
+    order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_email VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE order_items (
+    item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL, -- FK sits on Many side
+    sku VARCHAR(64) NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
+);</div>
+
+            <h3>1.3 Many-to-Many (M:N) & Junction Payloads</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Infinite Loops & Multiple Enrollment</strong>
+                Students enroll in many courses, and courses have many students. You cannot put a Foreign Key in either table without creating infinite circular dependency loops!
+            </div>
+            <div class="callout-solution">
+                <strong>✅ Architectural Solution: Junction (Association) Table</strong>
+                Create a bridging table with a composite primary key `(student_id, course_id)`. Crucially, junction tables store <span class="hl hl-yellow">Relationship Payloads</span> like enrollment date or final grade!
+            </div>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: M:N Junction Payload</span>
+CREATE TABLE enrollments (
+    student_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    semester_enrolled VARCHAR(16) NOT NULL, -- Payload attribute
+    final_grade VARCHAR(4),                  -- Payload attribute
+    PRIMARY KEY (student_id, course_id),     -- Composite PK prevents double enrollment!
+    FOREIGN KEY (student_id) REFERENCES students(student_id),
+    FOREIGN KEY (course_id) REFERENCES courses(course_id)
+);</div>
+        </section>
+
+        <!-- MODULE 2 -->
+        <section id="mod2">
+            <h2>Module 2: Key Architecture & Primary Key Engineering</h2>
+
+            <h3>2.1 Natural Keys vs Surrogate Keys</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: The Enterprise Mutability Crisis</strong>
+                If you use a natural attribute like employee email or company tax ID as the Primary Key, what happens when the company rebrands or an employee changes their legal name? Updating a primary key forces taking global table locks to update millions of referencing foreign keys!
+            </div>
+            <p>Always use an immutable <span class="hl hl-blue">Surrogate Key</span> (`user_id INTEGER / UUID`) as the Primary Key, and protect natural domain keys with a `UNIQUE` constraint!</p>
+
+            <h3>2.2 Distributed ID Generation at Scale</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Multi-Master Auto-Increment Bottlenecks</strong>
+                In globally sharded databases (Instagram, Uber), sequential auto-increment (`1, 2, 3...`) requires centralized global locks across data centers that throttle write throughput to near zero.
+            </div>
+            <table class="notes-table">
+                <thead>
+                    <tr>
+                        <th>Strategy</th>
+                        <th>Pros & Storage</th>
+                        <th>Cons & Best Used For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Auto-Increment INT</strong></td>
+                        <td>Compact 4 or 8 bytes. Sequential B-Tree inserts.</td>
+                        <td>Single point of failure. Cannot generate IDs offline on mobile apps.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>UUID v4 (Random)</strong></td>
+                        <td>128-bit string. Offline generation without central server.</td>
+                        <td>Random entropy destroys B-Tree locality, causing massive page splits & 50% index bloat.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>UUID v7 / ULID</strong></td>
+                        <td>Stores Unix Timestamp in leading bits + random entropy.</td>
+                        <td><strong>⭐ Industry Standard!</strong> Offline generation AND time-ordered sequential B-Tree appends!</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Snowflake ID</strong></td>
+                        <td>64-bit integer (Timestamp + Worker ID + Counter).</td>
+                        <td>Compact 8-byte integer used by Twitter/Instagram sharded systems.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: UUIDv7 Time-Ordered Event Streams</span>
+CREATE TABLE telemetry_events (
+    event_id UUID PRIMARY KEY, -- Storing time-ordered UUIDv7
+    worker_node_id INTEGER NOT NULL,
+    payload JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);</div>
+        </section>
+
+        <!-- MODULE 3 -->
+        <section id="mod3">
+            <h2>Module 3: Domain Integrity & Table Constraints</h2>
+
+            <h3>3.1 CHECK & UNIQUE Constraints</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Concurrent Race Conditions</strong>
+                If two payment requests check account balance simultaneously (`SELECT balance FROM wallet`), both see $100 and approve $80 withdrawals. Without storage engine checks, accounts drop to -$60!
+            </div>
+            <p>A <span class="hl hl-purple">CHECK constraint</span> executes atomically at the storage layer during row locking, rejecting illegal mathematical transitions!</p>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: Stripe Wallet Mathematical Guarantees</span>
+CREATE TABLE customer_wallets (
+    wallet_id UUID PRIMARY KEY,
+    customer_id UUID NOT NULL UNIQUE,
+    balance DECIMAL(15, 4) NOT NULL DEFAULT 0.0000 CHECK (balance >= 0.0000),
+    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+    status VARCHAR(16) NOT NULL CHECK (status IN ('ACTIVE', 'FROZEN', 'CLOSED'))
+);</div>
+
+            <h3>3.2 Foreign Key Referential Actions</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Orphaned Rows & Audit Loss</strong>
+                If a department manager is deleted from HR systems, what happens to their 50 subordinates?
+            </div>
+            <ul>
+                <li><code>ON DELETE RESTRICT</code>: Blocks deletion if child rows exist. Mandatory for financial ledgers!</li>
+                <li><code>ON DELETE CASCADE</code>: Deletes child rows automatically. Perfect for user shopping carts.</li>
+                <li><code>ON DELETE SET NULL</code>: Preserves child records by nullifying the FK. Perfect for retaining employee records when a department dissolves.</li>
+            </ul>
+        </section>
+
+        <!-- MODULE 4 -->
+        <section id="mod4">
+            <h2>Module 4: Normalization Mastery (1NF to 5NF)</h2>
+            <p>Normalization systematically removes data anomalies across enterprise tables:</p>
+
+            <h3>4.1 First Normal Form (1NF): Atomicity Rules</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Un-Indexable CSV Strings</strong>
+                Storing comma-separated tags like `"java, aws, sql"` forces slow full table scans (`WHERE skills LIKE '%sql%'`).
+            </div>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: Decomposing 1NF Atomic Table</span>
+CREATE TABLE developer_skills_1nf (
+    developer_id INTEGER NOT NULL,
+    skill_name VARCHAR(64) NOT NULL,
+    years_experience INTEGER NOT NULL,
+    PRIMARY KEY (developer_id, skill_name) -- Composite PK guarantees atomicity!
+);</div>
+
+            <h3>4.2 Second Normal Form (2NF): Partial Dependencies</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Price Corruption on Historical Orders</strong>
+                If order line items store `(order_id, product_sku, product_name, current_price)`, updating a product's price overwrites historical order receipts from 3 years ago!
+            </div>
+            <p>2NF requires that non-key attributes depend on the <span class="hl hl-green">entire composite primary key</span>.</p>
+
+            <h3>4.3 Third Normal Form (3NF) & BCNF: Transitive Dependencies</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Transitive Data Corruption</strong>
+                If an employee row contains `(emp_id, dept_id, building_name, helpdesk_phone)`, notice helpdesk phone depends on building name, which depends on dept_id!
+            </div>
+            <p>3NF rule: Non-key attributes must depend directly on the primary key, <span class="hl hl-pink">the whole key, and nothing but the key</span>!</p>
+
+            <h3>4.4 Fourth Normal Form (4NF): Multi-Valued Dependencies (MVDs)</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Cartesian Explosion</strong>
+                If a consultant speaks 3 languages (English, Spanish, German) and holds 2 certifications (AWS, CISSP), combining them into one table creates 3 × 2 = 6 redundant Cartesian product rows!
+            </div>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: 4NF Independent Dimensions</span>
+CREATE TABLE consultant_languages (
+    consultant_id INTEGER NOT NULL,
+    language VARCHAR(32) NOT NULL,
+    PRIMARY KEY (consultant_id, language)
+);
+
+CREATE TABLE consultant_certifications (
+    consultant_id INTEGER NOT NULL,
+    cert_name VARCHAR(64) NOT NULL,
+    PRIMARY KEY (consultant_id, cert_name)
+);</div>
+        </section>
+
+        <!-- MODULE 5 -->
+        <section id="mod5">
+            <h2>Module 5: Denormalization & Analytical OLAP</h2>
+
+            <h3>5.1 Why Denormalize? Read-Heavy Caching</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: High-Traffic N+1 CPU Starvation</strong>
+                Running `SELECT COUNT(*) FROM comments WHERE post_id = ?` across 100 million Reddit comments on every viral post view causes database CPU exhaustion.
+            </div>
+            <div class="callout-solution">
+                <strong>✅ Architectural Solution: Pre-Aggregated Counter Triggers</strong>
+                Store a denormalized `cached_comment_count` directly on the parent post record, maintained automatically via database triggers.
+            </div>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: Denormalized Counter Cache Trigger</span>
+CREATE TABLE posts (
+    post_id INTEGER PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    cached_comment_count INTEGER DEFAULT 0
+);
+
+CREATE TRIGGER trg_increment_comment_count
+AFTER INSERT ON comments
+BEGIN
+    UPDATE posts SET cached_comment_count = cached_comment_count + 1 
+    WHERE post_id = NEW.post_id;
+END;</div>
+
+            <h3>5.2 Dimensional Modeling: Star vs Snowflake Schemas</h3>
+            <p>In Data Warehouses (BigQuery, Snowflake), business intelligence queries aggregate billions of rows. We structure schemas into central <span class="hl hl-blue">Fact Tables</span> surrounded by unnormalized descriptive <span class="hl hl-yellow">Dimension Tables</span>.</p>
+        </section>
+
+        <!-- MODULE 6 -->
+        <section id="mod6">
+            <h2>Module 6: Migrations & DDL Lifecycle</h2>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Manual Production DDL Outages</strong>
+                Executing manual `ALTER TABLE` scripts in production terminal prompts risks locking high-concurrency tables and crashing live microservices.
+            </div>
+            <p>Always use schema migration frameworks (Flyway, Liquibase, Alembic) executing immutable, numbered UP/DOWN scripts in CI/CD pipelines!</p>
+            <div class="code-box">
+                <span class="code-label">Flyway Migration: V20260702__add_user_tier.sql</span>
+-- UP Migration Script:
+ALTER TABLE user_accounts ADD COLUMN subscription_tier VARCHAR(32) NOT NULL DEFAULT 'FREE';
+
+-- DOWN Rollback Script:
+ALTER TABLE user_accounts DROP COLUMN subscription_tier;</div>
+        </section>
+
+        <!-- MODULE 7 -->
+        <section id="mod7">
+            <h2>Module 7: Advanced Enterprise Design Patterns</h2>
+
+            <h3>7.1 Soft Deletes & Filtered Active Indexes</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Audit Destruction & Broken Analytics</strong>
+                Executing physical `DELETE FROM orders` destroys financial revenue trends and violates tax accounting retention compliance.
+            </div>
+            <p>Instead, add a nullable timestamp `deleted_at TIMESTAMPTZ NULL`. To keep queries blazing fast over millions of soft-deleted records, build <span class="hl hl-green">Partial Filtered Indexes</span>!</p>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: Soft Deletes & Partial Indexing</span>
+CREATE TABLE customer_contracts (
+    contract_id UUID PRIMARY KEY,
+    company_name VARCHAR(128) NOT NULL,
+    annual_value DECIMAL(12,2) NOT NULL,
+    deleted_at TIMESTAMPTZ NULL -- NULL means active!
+);
+
+-- Partial index indexes ONLY active records, saving 80% disk space!
+CREATE INDEX idx_active_contracts ON customer_contracts(company_name)
+WHERE deleted_at IS NULL;</div>
+
+            <h3>7.2 Multi-Tenancy SaaS Architecture</h3>
+            <p>How B2B SaaS platforms (Salesforce, Slack) isolate client data across 10,000 corporate organizations:</p>
+            <ul>
+                <li><strong>Shared Schema (Pool):</strong> All tables include `tenant_id UUID`. Enforced via Row-Level Security (RLS). Maximum scalability!</li>
+                <li><strong>Separate Schema:</strong> Dedicated schema per client (`tenant_acme.users`).</li>
+                <li><strong>Separate DB Instance (Silo):</strong> Dedicated physical DB server per enterprise client (Mandatory for HIPAA / SOC2 defense contracts).</li>
+            </ul>
+            <div class="code-box">
+                <span class="code-label">SQL Implementation: PostgreSQL Row-Level Security (RLS)</span>
+ALTER TABLE tenant_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_policy ON tenant_messages
+    USING (tenant_id = current_setting('app.current_tenant_id')::uuid);</div>
+        </section>
+    </main>
+</div>
+
+</body>
+</html>

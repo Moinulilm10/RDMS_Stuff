@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 2 Interactive Schema Studio & Enterprise Architecture Sandbox</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --bg-sidebar: #111726;
+            --bg-card: #1a2236;
+            --bg-code: #070a12;
+            --accent: #8b5cf6;
+            --accent-glow: rgba(139, 92, 246, 0.35);
+            --cyan: #38bdf8;
+            --green: #34d399;
+            --yellow: #fbbf24;
+            --pink: #f472b6;
+            --red: #f87171;
+            --text: #f8fafc;
+            --text2: #94a3b8;
+            --border: #28324a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 330px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #c4b5fd, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-home {
+            color: var(--text2);
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .nav-home:hover { color: #fff; background: var(--accent); }
+
+        .chapter-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+        }
+
+        .chapter-group { margin-bottom: 1.2rem; }
+        .chapter-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--cyan);
+            padding: 0.4rem 0.6rem;
+            font-weight: 800;
+        }
+
+        .slide-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text2);
+            font-size: 0.85rem;
+            transition: all 0.15s;
+            margin-bottom: 3px;
+        }
+
+        .slide-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+        .slide-item.active { background: rgba(139, 92, 246, 0.2); color: #fff; border-left: 3px solid var(--accent); font-weight: 700; }
+        .slide-num { font-size: 0.75rem; opacity: 0.6; width: 24px; }
+
+        /* Main Workspace */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: 60px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.75rem;
+            background: var(--bg-sidebar);
+        }
+
+        .slide-header-text h2 { font-size: 1.2rem; font-weight: 800; color: #fff; }
+        .slide-header-text span { font-size: 0.82rem; color: var(--text2); }
+
+        .fk-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(52, 211, 153, 0.12);
+            border: 1px solid rgba(52, 211, 153, 0.35);
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--green);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .fk-toggle:hover { transform: scale(1.02); }
+
+        .content-area {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            overflow: hidden;
+        }
+
+        /* Theory & Visual Pane */
+        .theory-pane {
+            padding: 2.25rem;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            line-height: 1.7;
+        }
+
+        .section-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+        .badge-prob { background: rgba(248, 113, 113, 0.15); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.3); }
+        .badge-sol { background: rgba(52, 211, 153, 0.15); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.3); }
+        .badge-real { background: rgba(56, 189, 248, 0.15); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+        .theory-pane h3 { font-size: 1.3rem; margin: 1.5rem 0 0.75rem; color: #fff; font-weight: 800; }
+        .theory-pane h3:first-child { margin-top: 0; }
+        .theory-pane p { margin-bottom: 1.1rem; color: #cbd5e1; font-size: 0.95rem; }
+        .theory-pane ul, .theory-pane ol { margin: 0 0 1.2rem 1.5rem; color: #cbd5e1; font-size: 0.95rem; }
+        .theory-pane li { margin-bottom: 0.45rem; }
+
+        .diagram-box {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin: 1.25rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: var(--cyan);
+            white-space: pre;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        .problem-box {
+            background: rgba(248, 113, 113, 0.08);
+            border-left: 4px solid var(--red);
+            padding: 1.1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+        }
+        .problem-box strong { color: var(--red); display: block; margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+        .solution-box {
+            background: rgba(52, 211, 153, 0.08);
+            border-left: 4px solid var(--green);
+            padding: 1.1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+        }
+        .solution-box strong { color: var(--green); display: block; margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+        .scenario-box {
+            background: rgba(56, 189, 248, 0.08);
+            border-left: 4px solid var(--cyan);
+            padding: 1.1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+        }
+        .scenario-box strong { color: var(--cyan); display: block; margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+        /* Interactive Sandbox Pane */
+        .sandbox-pane {
+            display: flex;
+            flex-direction: column;
+            background: #070a12;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            padding: 0.7rem 1.2rem;
+            background: #111726;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text2);
+            font-weight: 700;
+        }
+
+        .sql-editor {
+            flex: 1;
+            background: var(--bg-code);
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.87rem;
+            padding: 1.25rem;
+            border: none;
+            resize: none;
+            outline: none;
+            line-height: 1.6;
+        }
+
+        .editor-actions {
+            padding: 0.75rem 1.2rem;
+            background: #111726;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-run {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 0.55rem 1.4rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px var(--accent-glow);
+        }
+        .btn-run:hover { background: #7c3aed; transform: translateY(-1px); }
+
+        .btn-reset {
+            background: transparent;
+            color: var(--text2);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-reset:hover { color: #fff; border-color: var(--text2); }
+
+        .results-area {
+            height: 44%;
+            background: #070a12;
+            overflow: auto;
+            padding: 1.2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 1rem;
+        }
+
+        th, td {
+            padding: 0.65rem 0.85rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #111726;
+            color: var(--cyan);
+            position: sticky;
+            top: 0;
+            font-weight: 700;
+        }
+
+        td { color: #cbd5e1; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .status-msg {
+            font-size: 0.86rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-success { background: rgba(52, 211, 153, 0.12); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.25); }
+        .status-error { background: rgba(248, 113, 113, 0.12); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.25); }
+
+        @media (max-width: 1100px) {
+            .content-area { grid-template-columns: 1fr; }
+            .sidebar { width: 280px; }
+        }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h1>📐 Schema Studio</h1>
+        <a href="../index.html" class="nav-home">Hub</a>
+    </div>
+    <div class="chapter-list" id="chapterList"></div>
+</aside>
+
+<main class="main">
+    <header class="topbar">
+        <div class="slide-header-text">
+            <h2 id="slideTitle">Loading Studio...</h2>
+            <span id="slideSubtitle">Interactive Database Architecture</span>
+        </div>
+        <div class="fk-toggle" id="fkToggleBtn" onclick="toggleFK()">
+            🛡️ FK Enforcement: ON
+        </div>
+    </header>
+
+    <div class="content-area">
+        <div class="theory-pane" id="theoryPane"></div>
+        <div class="sandbox-pane">
+            <div class="editor-header">
+                <span>💻 LIVE DDL & DML SANDBOX (SQLite WASM)</span>
+                <span>Ctrl + Enter to Execute</span>
+            </div>
+            <textarea class="sql-editor" id="sqlEditor" spellcheck="false"></textarea>
+            <div class="editor-actions">
+                <button class="btn-reset" onclick="resetCurrentSlide()">🔄 Reset Clean Schema</button>
+                <button class="btn-run" onclick="runSQL()">▶ Run Architecture Script</button>
+            </div>
+            <div class="results-area" id="resultsArea">
+                <div class="status-msg status-success">Ready to execute schema architecture...</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+let db = null;
+let currentChapterIdx = 0;
+let currentSlideIdx = 0;
+let fkEnabled = true;
+
+const chapters = [
+// ────────────────────────────────────────────────────────
+// CHAPTER 1: ERD & RELATIONS
+// ────────────────────────────────────────────────────────
+{
+    title: "1. ERD & Relational Entities",
+    slides: [
+        {
+            title: "Entity, Attribute, Tuple & Domain Anatomy",
+            subtitle: "Mapping domain nouns to relational database structures",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Software applications process complex real-world concepts (users, subscriptions, hardware assets). If developers write code without a structured schema blueprint, data degrades into unstructured JSON blobs or messy spreadsheets where invalid data types crash production systems.</p>
+                
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>An <strong>Entity Relationship Diagram (ERD)</strong> establishes formal mathematics before writing table DDL:</p>
+                <ul>
+                    <li><strong>Entity:</strong> A distinct real-world object (becomes a database Table).</li>
+                    <li><strong>Attribute:</strong> Properties describing the entity (becomes table Columns).</li>
+                    <li><strong>Tuple:</strong> A single instantiated record of an entity (becomes a table Row).</li>
+                    <li><strong>Domain:</strong> The set of legal values permitted for an attribute (enforced via SQL Data Types and Constraints).</li>
+                </ul>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🏢 Cloud SaaS Asset Registry</strong>
+                    In AWS or Azure asset management, an organization tracks compute instances. Each instance must belong to a verified billing account and possess an immutable IP address and operating system type.
+                </div>
+            `,
+            sql: `-- Step 1: Create clean Entity with explicit Domain types
+DROP TABLE IF EXISTS compute_instances;
+DROP TABLE IF EXISTS billing_accounts;
+
+CREATE TABLE billing_accounts (
+    account_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_name TEXT NOT NULL,
+    credit_limit DECIMAL(12,2) NOT NULL DEFAULT 5000.00
+);
+
+CREATE TABLE compute_instances (
+    instance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL,
+    hostname TEXT NOT NULL UNIQUE,
+    vcpus INTEGER NOT NULL CHECK (vcpus IN (2, 4, 8, 16, 32, 64)),
+    ram_gb INTEGER NOT NULL,
+    status TEXT DEFAULT 'RUNNING' CHECK (status IN ('RUNNING', 'STOPPED', 'TERMINATED')),
+    FOREIGN KEY (account_id) REFERENCES billing_accounts(account_id)
+);
+
+-- Step 2: Populate Tuples
+INSERT INTO billing_accounts (company_name, credit_limit) VALUES ('Apex Fintech Labs', 25000.00);
+INSERT INTO compute_instances (account_id, hostname, vcpus, ram_gb) VALUES 
+(1, 'prod-api-router-01', 16, 64),
+(1, 'prod-db-master-01', 64, 256);
+
+-- Step 3: Verify clean joined Tuples
+SELECT b.company_name, c.hostname, c.vcpus, c.ram_gb, c.status
+FROM compute_instances c JOIN billing_accounts b ON c.account_id = b.account_id;`
+        },
+        {
+            title: "One-to-One (1:1): Security & Blob Offloading",
+            subtitle: "Splitting wide tables for IAM isolation and cache performance",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Putting 40 columns inside a single <code>users</code> table—including password hashes, Social Security Numbers (SSNs), and 5MB bio markdown blobs—destroys performance. Every authentication check or UI navbar load drags heavy unneeded columns into RAM memory pages and exposes PII to general backend queries.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>A 1:1 relationship isolates specialized attributes into a child table linked by a primary key that doubles as a foreign key:</p>
+                <div class="diagram-box">[ USERS (Core Auth) ] 1 &lt;=======&gt; 1 [ USER_KYC_PII (Secure) ]
+(user_id PK)                        (user_id PK &amp; FK to users)</div>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🏦 Banking KYC &amp; IAM Security</strong>
+                    When login APIs authenticate a user, they only query <code>users</code> (id, email, status). The sensitive <code>user_kyc_pii</code> table (tax ID, passport scan, home address) resides in an isolated schema accessed strictly by compliance auditors.
+                </div>
+            `,
+            sql: `-- Step 1: Core User table (lightweight, high-frequency queries)
+DROP TABLE IF EXISTS user_kyc_pii;
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    is_active INTEGER DEFAULT 1
+);
+
+-- Step 2: Child 1:1 table where user_id is BOTH Primary Key and Foreign Key
+CREATE TABLE user_kyc_pii (
+    user_id INTEGER PRIMARY KEY,
+    ssn_hash TEXT NOT NULL UNIQUE,
+    passport_number TEXT NOT NULL,
+    verification_status TEXT DEFAULT 'PENDING',
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+INSERT INTO users (username, email) VALUES ('alex_vault', 'alex@securesf.com');
+INSERT INTO user_kyc_pii (user_id, ssn_hash, passport_number, verification_status)
+VALUES (1, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'PASS-998877', 'VERIFIED');
+
+-- Verify 1:1 secure lookup
+SELECT u.username, k.verification_status, k.passport_number
+FROM users u JOIN user_kyc_pii k ON u.user_id = k.user_id;`
+        },
+        {
+            title: "One-to-Many (1:M): Parent-Child Cardinality",
+            subtitle: "Enforcing ownership hierarchies and cascading rules",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Without One-to-Many relationships, storing multiple shipping addresses or line items for a customer forces engineers to either duplicate the entire customer name and phone on every single line item row, or invent messy columns like <code>address_1</code>, <code>address_2</code>, <code>address_3</code>.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>In 1:M relationships, the parent entity exists once, while the child entity contains a foreign key pointing to the parent. The foreign key column MUST sit on the <strong>Many (&lt;) child side</strong>.</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🛒 E-Commerce Order Line Items</strong>
+                    One Order header (parent) owns dozens of Order Items (children). If an order is canceled or purged, all subordinate order items must automatically clean up.
+                </div>
+            `,
+            sql: `-- Step 1: Parent Order Header
+DROP TABLE IF EXISTS order_line_items;
+DROP TABLE IF EXISTS orders;
+
+CREATE TABLE orders (
+    order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_email TEXT NOT NULL,
+    order_date DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Step 2: Child Line Items (FK sits on the Many side)
+CREATE TABLE order_line_items (
+    item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    sku TEXT NOT NULL,
+    qty INTEGER NOT NULL CHECK (qty > 0),
+    unit_price DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
+);
+
+INSERT INTO orders (customer_email) VALUES ('procurement@spacex.com');
+INSERT INTO order_line_items (order_id, sku, qty, unit_price) VALUES 
+(1, 'TITANIUM-VALVE-09', 50, 120.00),
+(1, 'HEAT-SHIELD-TILE', 200, 45.50);
+
+SELECT o.order_id, o.customer_email, i.sku, i.qty, (i.qty * i.unit_price) AS line_total
+FROM orders o JOIN order_line_items i ON o.order_id = i.order_id;`
+        },
+        {
+            title: "Many-to-Many (M:N): Junction Table Payloads",
+            subtitle: "Resolving M:N complexity and storing relationship metadata",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>If students enroll in multiple courses, and each course contains multiple students, you cannot store a foreign key in either table without creating infinite circular loops or repeating rows.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>To resolve M:N relationships, relational theory requires creating a <strong>Junction (Association) Table</strong>. Crucially, junction tables store relationship payload data (timestamps, grades, access levels).</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🎓 University LMS Portal</strong>
+                    Students enroll in Courses. The junction table <code>enrollments</code> uses a composite primary key <code>(student_id, course_id)</code> to guarantee a student cannot enroll in the exact same class twice.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS enrollments;
+DROP TABLE IF EXISTS courses;
+DROP TABLE IF EXISTS students;
+
+CREATE TABLE students (student_id INTEGER PRIMARY KEY, full_name TEXT NOT NULL);
+CREATE TABLE courses (course_id INTEGER PRIMARY KEY, course_code TEXT UNIQUE, title TEXT NOT NULL);
+
+-- Junction table with Composite Primary Key & Payload Attributes
+CREATE TABLE enrollments (
+    student_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    enrolled_semester TEXT NOT NULL,
+    final_grade TEXT,
+    PRIMARY KEY (student_id, course_id),
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(course_id) ON DELETE CASCADE
+);
+
+INSERT INTO students VALUES (101, 'Ada Lovelace'), (102, 'Alan Turing');
+INSERT INTO courses VALUES (1, 'CS101', 'Algorithms'), (2, 'MATH402', 'Cryptography');
+
+INSERT INTO enrollments VALUES 
+(101, 1, 'Fall 2026', 'A+'),
+(101, 2, 'Fall 2026', 'A'),
+(102, 2, 'Fall 2026', 'A+');
+
+SELECT s.full_name, c.course_code, c.title, e.enrolled_semester, e.final_grade
+FROM enrollments e
+JOIN students s ON e.student_id = s.student_id
+JOIN courses c ON e.course_id = c.course_id;`
+        },
+        {
+            title: "Self-Referencing Hierarchies & Recursive CTEs",
+            subtitle: "Modeling recursive trees inside flat relational tables",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>How do you store Reddit threaded comment replies of arbitrary depth, or corporate employee reporting chains (VP → Director → Manager → Engineer) without creating 20 tables?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>A table can reference its own primary key! A <code>parent_id</code> column points directly to <code>id</code> in the exact same table. To query arbitrary tree depths, we execute SQL <strong>Recursive Common Table Expressions (CTEs)</strong>.</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🏢 Corporate Org Chart Navigation</strong>
+                    Displaying every subordinate under the Chief Technology Officer (CTO), calculating depth hierarchy levels dynamically.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS employees_org;
+
+CREATE TABLE employees_org (
+    emp_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    manager_id INTEGER NULL,
+    name TEXT NOT NULL,
+    role_title TEXT NOT NULL,
+    FOREIGN KEY (manager_id) REFERENCES employees_org(emp_id) ON DELETE SET NULL
+);
+
+INSERT INTO employees_org (emp_id, manager_id, name, role_title) VALUES
+(1, NULL, 'Sarah Connor', 'Chief Technology Officer'),
+(2, 1, 'John Reese', 'VP of Engineering'),
+(3, 2, 'Miles Dyson', 'Lead Systems Architect'),
+(4, 3, 'T-800 Unit', 'Staff Backend Engineer');
+
+-- Recursive CTE traversal from CTO down to engineers:
+WITH RECURSIVE org_tree AS (
+    SELECT emp_id, manager_id, name, role_title, 1 AS hierarchy_level, name AS chain
+    FROM employees_org WHERE manager_id IS NULL
+    UNION ALL
+    SELECT e.emp_id, e.manager_id, e.name, e.role_title, t.hierarchy_level + 1, t.chain || ' -> ' || e.name
+    FROM employees_org e JOIN org_tree t ON e.manager_id = t.emp_id
+)
+SELECT hierarchy_level, name, role_title, chain FROM org_tree ORDER BY hierarchy_level;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 2: KEYS ARCHITECTURE
+// ────────────────────────────────────────────────────────
+{
+    title: "2. Primary & Foreign Key Architecture",
+    slides: [
+        {
+            title: "Natural Keys vs Surrogate Keys",
+            subtitle: "Why real-world domain keys break production systems",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Using a natural attribute like email address, corporate tax ID, or Social Security Number as the Primary Key seems intuitive until a company rebranding or marriage occurs. Updating a natural primary key requires taking global table locks to cascade changes across millions of child rows!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Surrogate Key:</strong> An artificial, system-generated integer or UUID with zero business meaning. Never mutates.</li>
+                    <li><strong>Natural Key:</strong> A real-world attribute. Should always be stored as a regular column protected by a <code>UNIQUE</code> constraint!</li>
+                </ul>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>📧 Enterprise Identity Management</strong>
+                    An employee changes their email from <code>j.smith@acme.com</code> to <code>j.doe@acme.com</code>. Because foreign keys point to <code>user_id = 1042</code> (Surrogate), zero foreign key updates are needed!
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS user_accounts;
+
+CREATE TABLE user_accounts (
+    -- Immutable Surrogate Anchor:
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    -- Natural Business Key enforced via UNIQUE constraint:
+    email TEXT NOT NULL UNIQUE,
+    full_name TEXT NOT NULL
+);
+
+CREATE TABLE audit_logs (
+    log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user_accounts(user_id)
+);
+
+INSERT INTO user_accounts (email, full_name) VALUES ('old.email@corp.com', 'Jane Smith');
+INSERT INTO audit_logs (user_id, action) VALUES (1, 'PASSWORD_RESET_REQUESTED');
+
+-- Jane updates her email. Notice child audit logs stay intact instantly!
+UPDATE user_accounts SET email = 'new.email@corp.com' WHERE user_id = 1;
+
+SELECT u.user_id, u.email, a.action FROM user_accounts u JOIN audit_logs a ON u.user_id = a.user_id;`
+        },
+        {
+            title: "Distributed ID Generation (UUIDv7 & Snowflake)",
+            subtitle: "Solving auto-increment bottlenecks in sharded multi-master DBs",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>In globally sharded databases (Instagram, Uber, Stripe), auto-increment integers require centralized coordination locks across data centers. If 50 servers insert concurrently, sequential integer synchronization grinds throughput to a halt.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>UUID v4 (Random):</strong> Offline generation, but random values destroy B-Tree locality, causing massive page splits and 50% index bloat.</li>
+                    <li><strong>UUID v7 / ULID (Time-Ordered):</strong> Stores Unix timestamp in leading bits + random entropy. Guarantees offline generation AND sequential B-Tree append speed!</li>
+                    <li><strong>Snowflake ID:</strong> 64-bit integer (Timestamp + Worker ID + Counter). Fits compact 8-byte integers.</li>
+                </ul>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🐦 High-Scale Social Media Event Streams</strong>
+                    Millions of tweets or telemetry events generated per second across distributed edge servers without a single database collision.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS distributed_telemetry;
+
+CREATE TABLE distributed_telemetry (
+    -- Storing 36-character time-ordered UUID string:
+    event_id TEXT PRIMARY KEY,
+    worker_node INTEGER NOT NULL,
+    payload_metric TEXT NOT NULL
+);
+
+-- Simulating time-ordered UUID v7 inserts from independent edge nodes:
+INSERT INTO distributed_telemetry VALUES 
+('018f3a21-7000-7000-8000-000000000001', 101, 'CPU_USAGE: 45%'),
+('018f3a21-8010-7000-8000-000000000002', 102, 'MEM_USAGE: 82%'),
+('018f3a21-9020-7000-8000-000000000003', 101, 'DISK_IO: NORMAL');
+
+-- Notice results are naturally sorted chronologically by ID!
+SELECT event_id, worker_node, payload_metric FROM distributed_telemetry ORDER BY event_id ASC;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 3: DOMAIN INTEGRITY & CONSTRAINTS
+// ────────────────────────────────────────────────────────
+{
+    title: "3. Domain Integrity & Table Constraints",
+    slides: [
+        {
+            title: "CHECK & UNIQUE Constraints at Scale",
+            subtitle: "Enforcing bulletproof business invariants inside the storage engine",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>If two concurrent API calls check <code>SELECT available_balance FROM accounts</code> and both see $100, both might approve a $80 withdrawal. Without database-level domain constraints, concurrent race conditions drain accounts into negative balances!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>The storage engine executes checks atomically during row locks:</p>
+                <ul>
+                    <li><code>CHECK (balance &gt;= 0)</code>: Rejects any DML attempt that breaches mathematical rules.</li>
+                    <li><code>UNIQUE (tenant_id, sku)</code>: Prevents duplicate resources inside multi-tenant partitions.</li>
+                </ul>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>💳 Stripe Wallet Ledger Balance</strong>
+                    Guaranteeing account balances never drop below $0.00 during concurrent race condition withdrawals.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS customer_wallets;
+
+CREATE TABLE customer_wallets (
+    wallet_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_uuid TEXT NOT NULL UNIQUE,
+    balance DECIMAL(12,2) NOT NULL DEFAULT 0.00 CHECK (balance >= 0.00),
+    status TEXT DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'FROZEN'))
+);
+
+INSERT INTO customer_wallets (account_uuid, balance) VALUES ('ACC-9901', 150.00);
+
+-- Valid withdrawal of $100:
+UPDATE customer_wallets SET balance = balance - 100.00 WHERE account_uuid = 'ACC-9901';
+
+-- Uncommenting the next line will fail atomically due to CHECK constraint!
+-- UPDATE customer_wallets SET balance = balance - 100.00 WHERE account_uuid = 'ACC-9901';
+
+SELECT * FROM customer_wallets;`
+        },
+        {
+            title: "Referential Actions: CASCADE vs RESTRICT vs SET NULL",
+            subtitle: "Managing orphan records and lifecycle deletion policies",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>When an administrator deletes a department, what happens to the 500 employees inside it? Without referential actions, you either get orphaned records pointing to non-existent departments, or silent data corruption.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><code>ON DELETE RESTRICT</code>: Aborts deletion if children exist. Essential for accounting ledgers!</li>
+                    <li><code>ON DELETE CASCADE</code>: Deletes children automatically. Perfect for disposable session tokens or cart items.</li>
+                    <li><code>ON DELETE SET NULL</code>: Nullifies foreign key. Perfect for preserving historical audit records when an employee quits.</li>
+                </ul>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🏢 Enterprise HR Department Reorganization</strong>
+                    When an office closes, employees are preserved with <code>dept_id = NULL</code> awaiting reassignment, whereas temporary office access badges are CASCADED away.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS office_badges;
+DROP TABLE IF EXISTS personnel;
+DROP TABLE IF EXISTS work_units;
+
+CREATE TABLE work_units (unit_id INTEGER PRIMARY KEY, unit_name TEXT NOT NULL);
+
+CREATE TABLE personnel (
+    staff_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    unit_id INTEGER NULL,
+    full_name TEXT NOT NULL,
+    FOREIGN KEY (unit_id) REFERENCES work_units(unit_id) ON DELETE SET NULL
+);
+
+CREATE TABLE office_badges (
+    badge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    staff_id INTEGER NOT NULL,
+    badge_code TEXT NOT NULL,
+    FOREIGN KEY (staff_id) REFERENCES personnel(staff_id) ON DELETE CASCADE
+);
+
+INSERT INTO work_units VALUES (10, 'Mobile AI Lab');
+INSERT INTO personnel (unit_id, full_name) VALUES (10, 'Dr. Robert Ford');
+INSERT INTO office_badges (staff_id, badge_code) VALUES (1, 'BDG-LAB-88');
+
+-- Delete Unit 10. Notice personnel unit_id becomes NULL, but personnel is NOT deleted!
+DELETE FROM work_units WHERE unit_id = 10;
+
+SELECT p.staff_id, p.full_name, p.unit_id, b.badge_code
+FROM personnel p LEFT JOIN office_badges b ON p.staff_id = b.staff_id;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 4: NORMALIZATION REFACTORING
+// ────────────────────────────────────────────────────────
+{
+    title: "4. Normalization Refactoring (1NF to BCNF)",
+    slides: [
+        {
+            title: "First Normal Form (1NF): Atomicity Rules",
+            subtitle: "Eliminating repeating groups and multi-valued CSV strings",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Storing comma-separated tags like <code>"python, sql, docker"</code> inside a single column prevents SQL indexes from seeking. Finding all Python engineers forces full table scans with slow substring searching (<code>WHERE skills LIKE '%python%'</code>).</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>1NF enforces that every column contains only atomic (indivisible) values and every row possesses a unique primary key identifier.</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>💻 Developer Talent Marketplace</strong>
+                    Decomposing developer technical skills into a normalized 1NF table for instant indexed matching against recruiter job searches.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS developer_skills_1nf;
+
+-- Clean 1NF Table structure:
+CREATE TABLE developer_skills_1nf (
+    dev_id INTEGER NOT NULL,
+    dev_name TEXT NOT NULL,
+    skill_tag TEXT NOT NULL,
+    years_experience INTEGER NOT NULL,
+    PRIMARY KEY (dev_id, skill_tag)
+);
+
+INSERT INTO developer_skills_1nf VALUES
+(1, 'Grace Hopper', 'COBOL', 15),
+(1, 'Grace Hopper', 'Compiler Design', 20),
+(2, 'Margaret Hamilton', 'Software Engineering', 25),
+(2, 'Margaret Hamilton', 'Flight Software', 18);
+
+-- Instant indexed exact match search:
+SELECT dev_name, skill_tag, years_experience 
+FROM developer_skills_1nf 
+WHERE skill_tag = 'Compiler Design';`
+        },
+        {
+            title: "Second Normal Form (2NF): Partial Dependencies",
+            subtitle: "Ensuring non-key attributes depend on the WHOLE composite key",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>In our 1NF table above with composite key <code>(dev_id, skill_tag)</code>, notice that <code>dev_name</code> depends ONLY on <code>dev_id</code>, not on the skill! If Grace Hopper changes her legal name, you must update multiple skill rows!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>2NF requires 1NF compliance AND elimination of partial dependencies: non-key columns must depend on the entire composite primary key.</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>📦 E-Commerce Order Items Price Protection</strong>
+                    Splitting master product attributes from order line items so product price updates don't alter historical order receipts.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS dev_skill_matrix;
+DROP TABLE IF EXISTS developers_master;
+
+CREATE TABLE developers_master (
+    dev_id INTEGER PRIMARY KEY,
+    dev_name TEXT NOT NULL,
+    seniority_level TEXT DEFAULT 'Staff'
+);
+
+CREATE TABLE dev_skill_matrix (
+    dev_id INTEGER NOT NULL,
+    skill_name TEXT NOT NULL,
+    proficiency TEXT NOT NULL,
+    PRIMARY KEY (dev_id, skill_name),
+    FOREIGN KEY (dev_id) REFERENCES developers_master(dev_id) ON DELETE CASCADE
+);
+
+INSERT INTO developers_master VALUES (1, 'Grace Hopper', 'Fellow'), (2, 'Linus Torvalds', 'Principal');
+INSERT INTO dev_skill_matrix VALUES (1, 'Compiler Design', 'Expert'), (2, 'C Programming', 'Creator');
+
+SELECT d.dev_name, d.seniority_level, s.skill_name, s.proficiency
+FROM developers_master d JOIN dev_skill_matrix s ON d.dev_id = s.dev_id;`
+        },
+        {
+            title: "Third Normal Form (3NF) & BCNF",
+            subtitle: "Eliminating transitive dependencies across non-key columns",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>If an employee table stores <code>(emp_id, dept_id, dept_building, building_phone)</code>, notice building phone depends on building location, which depends on dept_id! Updating office phone numbers corrupts employee records.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>3NF requires 2NF compliance and zero transitive dependencies: non-key attributes must depend directly on the primary key and nothing else.</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🏢 Global Campus Directory</strong>
+                    Decomposing office building contact details into an independent 3NF lookup table.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS corporate_staff;
+DROP TABLE IF EXISTS campus_offices;
+
+CREATE TABLE campus_offices (
+    dept_id INTEGER PRIMARY KEY,
+    dept_name TEXT NOT NULL,
+    building_code TEXT NOT NULL,
+    helpdesk_extension TEXT NOT NULL
+);
+
+CREATE TABLE corporate_staff (
+    staff_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    full_name TEXT NOT NULL,
+    dept_id INTEGER NOT NULL,
+    FOREIGN KEY (dept_id) REFERENCES campus_offices(dept_id)
+);
+
+INSERT INTO campus_offices VALUES (500, 'Security Operations', 'BLDG-OMEGA', 'x9111');
+INSERT INTO corporate_staff (full_name, dept_id) VALUES ('Elliot Alderson', 500);
+
+SELECT s.full_name, o.dept_name, o.building_code, o.helpdesk_extension
+FROM corporate_staff s JOIN campus_offices o ON s.dept_id = o.dept_id;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 5: ADVANCED NORMAL FORMS (4NF & 5NF)
+// ────────────────────────────────────────────────────────
+{
+    title: "5. Advanced Normal Forms (4NF & 5NF)",
+    slides: [
+        {
+            title: "Fourth Normal Form (4NF): Multi-Valued Dependencies",
+            subtitle: "Resolving Cartesian explosions between independent M:N dimensions",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>If a consultant speaks 3 languages (English, French, Japanese) AND holds 2 certifications (AWS, CISSP), storing them in one table forces 3 × 2 = 6 redundant Cartesian product rows! Adding one language adds 2 more duplicate rows!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>4NF eliminates independent multi-valued dependencies (MVDs) by splitting each independent many-to-many dimension into its own distinct table.</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🌐 Global IT Consultancy Profiles</strong>
+                    Separating consultant spoken language competencies from technical cloud certifications.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS consultant_certifications;
+DROP TABLE IF EXISTS consultant_languages;
+DROP TABLE IF EXISTS consultants_master;
+
+CREATE TABLE consultants_master (consultant_id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+
+CREATE TABLE consultant_languages (
+    consultant_id INTEGER NOT NULL,
+    language_spoken TEXT NOT NULL,
+    PRIMARY KEY (consultant_id, language_spoken),
+    FOREIGN KEY (consultant_id) REFERENCES consultants_master(consultant_id)
+);
+
+CREATE TABLE consultant_certifications (
+    consultant_id INTEGER NOT NULL,
+    cert_name TEXT NOT NULL,
+    PRIMARY KEY (consultant_id, cert_name),
+    FOREIGN KEY (consultant_id) REFERENCES consultants_master(consultant_id)
+);
+
+INSERT INTO consultants_master VALUES (1, 'Dr. Aris Thorne');
+INSERT INTO consultant_languages VALUES (1, 'English'), (1, 'French'), (1, 'Japanese');
+INSERT INTO consultant_certifications VALUES (1, 'AWS Solutions Architect'), (1, 'CISSP Security');
+
+SELECT c.name, 
+       (SELECT COUNT(*) FROM consultant_languages WHERE consultant_id = c.consultant_id) AS lang_count,
+       (SELECT COUNT(*) FROM consultant_certifications WHERE consultant_id = c.consultant_id) AS cert_count
+FROM consultants_master c;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 6: STRATEGIC DENORMALIZATION & OLAP
+// ────────────────────────────────────────────────────────
+{
+    title: "6. Denormalization & Analytical OLAP",
+    slides: [
+        {
+            title: "When to Denormalize: Read-Heavy Caching",
+            subtitle: "Trading disk space for sub-millisecond query performance",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>In high-traffic feeds (Reddit, YouTube), running <code>SELECT COUNT(*) FROM comments WHERE video_id = ?</code> across 50 million rows on every page load causes database CPU exhaustion.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>Denormalization deliberately introduces controlled redundancy (storing pre-computed counters or immutable snapshots) maintained automatically via triggers or async worker queues.</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>📺 High-Scale Video Platform Counters</strong>
+                    Storing cached comment counts directly on video master records updated via atomic triggers.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS video_comments;
+DROP TABLE IF EXISTS platform_videos;
+
+CREATE TABLE platform_videos (
+    video_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    cached_comment_count INTEGER DEFAULT 0
+);
+
+CREATE TABLE video_comments (
+    comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    video_id INTEGER NOT NULL,
+    comment_text TEXT NOT NULL,
+    FOREIGN KEY (video_id) REFERENCES platform_videos(video_id)
+);
+
+INSERT INTO platform_videos (title) VALUES ('Database Engine Deep Dive Architecture');
+
+-- Trigger auto-maintaining denormalized cache:
+CREATE TRIGGER trg_comment_added AFTER INSERT ON video_comments
+BEGIN
+    UPDATE platform_videos SET cached_comment_count = cached_comment_count + 1 WHERE video_id = NEW.video_id;
+END;
+
+INSERT INTO video_comments (video_id, comment_text) VALUES (1, 'Brilliant explanation of LSM trees!');
+INSERT INTO video_comments (video_id, comment_text) VALUES (1, 'Loved the section on WAL checkpointing.');
+
+SELECT video_id, title, cached_comment_count FROM platform_videos;`
+        },
+        {
+            title: "Dimensional Modeling: Star vs Snowflake Schemas",
+            subtitle: "Structuring analytical data warehouses for BI reporting",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>OLTP schemas optimize for fast single-row writes. When business analysts query 5 years of sales data across 12 normalized tables, multi-join queries take 45 minutes to execute.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>Data warehouses organize data into central <strong>Fact Tables</strong> (millions of quantitative event rows) surrounded by unnormalized descriptive <strong>Dimension Tables</strong> (Star Schema).</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>📊 Global Retail BI Analytics</strong>
+                    Aggregating revenue metrics by store region and sales quarter with minimal join overhead.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS fact_retail_sales;
+DROP TABLE IF EXISTS dim_store_locations;
+
+CREATE TABLE dim_store_locations (
+    store_key INTEGER PRIMARY KEY,
+    store_name TEXT NOT NULL,
+    region TEXT NOT NULL
+);
+
+CREATE TABLE fact_retail_sales (
+    sale_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    store_key INTEGER NOT NULL,
+    revenue_amount DECIMAL(12,2) NOT NULL,
+    sale_date DATE NOT NULL
+);
+
+INSERT INTO dim_store_locations VALUES (101, 'Manhattan Flagship', 'NorthEast'), (102, 'Austin Tech Hub', 'SouthWest');
+INSERT INTO fact_retail_sales (store_key, revenue_amount, sale_date) VALUES 
+(101, 14500.00, '2026-07-01'),
+(101, 8200.00, '2026-07-01'),
+(102, 19100.00, '2026-07-01');
+
+SELECT d.region, d.store_name, COUNT(f.sale_id) AS transactions, SUM(f.revenue_amount) AS total_revenue
+FROM fact_retail_sales f JOIN dim_store_locations d ON f.store_key = d.store_key
+GROUP BY d.store_key;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 7: SCHEMA VERSIONING & MIGRATIONS
+// ────────────────────────────────────────────────────────
+{
+    title: "7. Migrations & Enterprise Lifecycle",
+    slides: [
+        {
+            title: "Schema Migrations & Rollback Safety",
+            subtitle: "Managing production DDL via versioned CI/CD pipelines",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Never execute manual <code>ALTER TABLE</code> commands in production terminals! A typo or lock timeout can cause catastrophic downtime across live microservices.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>Enterprise teams use tools like Flyway or Liquibase that run numbered, forward-only UP migration scripts paired with tested DOWN rollback scripts.</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🚀 Zero-Downtime SaaS Deployment</strong>
+                    Adding a non-nullable subscription column safely without locking live user writes.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS saas_tenants;
+
+CREATE TABLE saas_tenants (
+    tenant_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_name TEXT NOT NULL
+);
+
+INSERT INTO saas_tenants (company_name) VALUES ('Acme Corp'), ('Globex Inc');
+
+-- Simulating Migration V20260702__add_tier.sql (UP script):
+ALTER TABLE saas_tenants ADD COLUMN tier TEXT DEFAULT 'ENTERPRISE';
+
+SELECT * FROM saas_tenants;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 8: ADVANCED SYSTEM DESIGN PATTERNS
+// ────────────────────────────────────────────────────────
+{
+    title: "8. Advanced System Design Patterns",
+    slides: [
+        {
+            title: "Soft Deletes & Filtered Active Indexes",
+            subtitle: "Preserving audit histories while maintaining query speed",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Executing physical <code>DELETE FROM users</code> destroys financial auditability, breaks analytical historical trends, and risks accidental cascading data loss.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>Add a timestamp column <code>deleted_at DATETIME NULL</code>. Queries filter active records via <code>WHERE deleted_at IS NULL</code>. To optimize index space over millions of soft-deleted rows, create partial filtered indexes!</p>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>⚖️ Enterprise Legal Audit Compliance</strong>
+                    Soft deleting client contracts while preserving immutable accounting references.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS enterprise_contracts;
+
+CREATE TABLE enterprise_contracts (
+    contract_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_name TEXT NOT NULL,
+    annual_value DECIMAL(12,2) NOT NULL,
+    deleted_at DATETIME NULL -- NULL indicates active record!
+);
+
+INSERT INTO enterprise_contracts (client_name, annual_value) VALUES 
+('Wayne Enterprises', 150000.00),
+('Cyberdyne Systems', 320000.00);
+
+-- "Soft Delete" Wayne Enterprises contract:
+UPDATE enterprise_contracts SET deleted_at = CURRENT_TIMESTAMP WHERE contract_id = 1;
+
+-- Application query fetching ONLY active contracts:
+SELECT contract_id, client_name, annual_value, 'ACTIVE' AS state
+FROM enterprise_contracts 
+WHERE deleted_at IS NULL;`
+        },
+        {
+            title: "Multi-Tenancy Isolation Patterns",
+            subtitle: "Shared DB vs Shared Schema vs Dedicated Instance architecture",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>How do B2B SaaS platforms (Salesforce, Slack, Notion) store data for 10,000 corporate clients without cross-tenant data leaks?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Shared Schema (Pool):</strong> Every table includes <code>tenant_id UUID</code>. Protected via Row-Level Security (RLS). Most scalable!</li>
+                    <li><strong>Separate Schema:</strong> Dedicated PostgreSQL schema per client (<code>tenant_abc.users</code>).</li>
+                    <li><strong>Separate Database (Silo):</strong> Dedicated DB server per enterprise client (HIPAA/SOC2 compliance).</li>
+                </ul>
+
+                <span class="section-badge badge-real">Real World Scenario</span>
+                <div class="scenario-box">
+                    <strong>🔒 B2B Multi-Tenant Slack Messages</strong>
+                    Enforcing tenant isolation so Company A queries can never accidentally read Company B messages.
+                </div>
+            `,
+            sql: `DROP TABLE IF EXISTS tenant_messages;
+
+CREATE TABLE tenant_messages (
+    msg_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    sender TEXT NOT NULL,
+    message_body TEXT NOT NULL
+);
+
+INSERT INTO tenant_messages (tenant_id, sender, message_body) VALUES 
+(101, 'Alice (Acme)', 'Acme Q3 confidential roadmap.'),
+(102, 'Bob (Globex)', 'Globex merger discussion.');
+
+-- Simulating application backend query for Tenant 101 strictly isolated:
+SELECT sender, message_body 
+FROM tenant_messages 
+WHERE tenant_id = 101;`
+        }
+    ]
+}
+];
+
+// Initialize UI
+function init() {
+    renderSidebar();
+    loadSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` })
+        .then(SQL => {
+            db = new SQL.Database();
+            db.run("PRAGMA foreign_keys = ON;");
+            selectSlide(0, 0);
+        }).catch(err => {
+            document.getElementById('slideTitle').textContent = "Failed to load SQLite WASM";
+            console.error(err);
+        });
+}
+
+function renderSidebar() {
+    const list = document.getElementById('chapterList');
+    list.innerHTML = chapters.map((ch, cIdx) => `
+        <div class="chapter-group">
+            <div class="chapter-title">${ch.title}</div>
+            ${ch.slides.map((sl, sIdx) => `
+                <div class="slide-item ${cIdx === 0 && sIdx === 0 ? 'active' : ''}" 
+                     id="slide_${cIdx}_${sIdx}" 
+                     onclick="selectSlide(${cIdx}, ${sIdx})">
+                    <span class="slide-num">${sIdx + 1}.</span>
+                    <span>${sl.title}</span>
+                </div>
+            `).join('')}
+        </div>
+    `).join('');
+}
+
+function selectSlide(cIdx, sIdx) {
+    currentChapterIdx = cIdx;
+    currentSlideIdx = sIdx;
+    
+    document.querySelectorAll('.slide-item').forEach(el => el.classList.remove('active'));
+    const activeEl = document.getElementById(`slide_${cIdx}_${sIdx}`);
+    if (activeEl) activeEl.classList.add('active');
+
+    const slide = chapters[cIdx].slides[sIdx];
+    document.getElementById('slideTitle').textContent = slide.title;
+    document.getElementById('slideSubtitle').textContent = slide.subtitle;
+    document.getElementById('theoryPane').innerHTML = slide.theory;
+    document.getElementById('sqlEditor').value = slide.sql.trim();
+
+    resetCurrentSlide();
+}
+
+function toggleFK() {
+    fkEnabled = !fkEnabled;
+    const btn = document.getElementById('fkToggleBtn');
+    if (fkEnabled) {
+        btn.innerHTML = "🛡️ FK Enforcement: ON";
+        btn.style.color = "var(--green)";
+        btn.style.borderColor = "rgba(52, 211, 153, 0.35)";
+        if (db) db.run("PRAGMA foreign_keys = ON;");
+    } else {
+        btn.innerHTML = "⚠️ FK Enforcement: OFF";
+        btn.style.color = "var(--yellow)";
+        btn.style.borderColor = "rgba(251, 191, 36, 0.35)";
+        if (db) db.run("PRAGMA foreign_keys = OFF;");
+    }
+}
+
+function resetCurrentSlide() {
+    if (!db) return;
+    const SQL = db.constructor;
+    db.close();
+    db = new SQL();
+    db.run(fkEnabled ? "PRAGMA foreign_keys = ON;" : "PRAGMA foreign_keys = OFF;");
+    
+    document.getElementById('sqlEditor').value = chapters[currentChapterIdx].slides[currentSlideIdx].sql.trim();
+    runSQL();
+}
+
+function runSQL() {
+    if (!db) return;
+    const sqlText = document.getElementById('sqlEditor').value;
+    const resArea = document.getElementById('resultsArea');
+    const startTime = performance.now();
+
+    try {
+        const results = db.exec(sqlText);
+        const elapsed = (performance.now() - startTime).toFixed(1);
+
+        if (results.length === 0) {
+            resArea.innerHTML = `<div class="status-msg status-success">✅ Architecture statements executed successfully (${elapsed}ms). Clean DDL/DML state.</div>`;
+            return;
+        }
+
+        let html = `<div class="status-msg status-success">✅ Query execution completed in ${elapsed}ms</div>`;
+        results.forEach(res => {
+            html += `<table><thead><tr>${res.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+            res.values.forEach(row => {
+                html += `<tr>${row.map(v => `<td>${v === null ? '<i style="color:var(--text2)">NULL</i>' : v}</td>`).join('')}</tr>`;
+            });
+            html += `</tbody></table><br>`;
+        });
+        resArea.innerHTML = html;
+    } catch (err) {
+        resArea.innerHTML = `<div class="status-msg status-error">❌ SQLite Execution Error: ${err.message}</div>`;
+    }
+}
+
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runSQL();
+    }
+});
+
+window.onload = init;
+</script>
+</body>
+</html>

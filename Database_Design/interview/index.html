@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 2 Database Architecture & System Design Interview Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --bg-card: #131a2b;
+            --bg-hover: #1c263e;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-pink: #ec4899;
+            --accent-yellow: #f59e0b;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            padding: 3rem 1.5rem;
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(139, 92, 246, 0.12) 0px, transparent 50%),
+                radial-gradient(at 80% 80%, rgba(6, 182, 212, 0.1) 0px, transparent 50%);
+        }
+
+        .header {
+            max-width: 1000px;
+            margin: 0 auto 3rem;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 9999px;
+            color: #c4b5fd;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: clamp(2.2rem, 4vw, 3.5rem);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff, #c4b5fd, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 750px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Controls */
+        .controls {
+            max-width: 1000px;
+            margin: 0 auto 2.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.5rem 1.1rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+        .filter-btn.active { background: var(--accent-purple); color: #fff; border-color: var(--accent-purple); }
+
+        .search-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            width: 280px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus { border-color: var(--accent-cyan); }
+
+        /* Questions Grid */
+        .q-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .category-group {
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+        }
+        .category-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .q-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .q-card:hover { border-color: rgba(255, 255, 255, 0.18); }
+
+        .q-header {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .q-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .diff-badge {
+            font-size: 0.72rem;
+            padding: 0.2rem 0.65rem;
+            border-radius: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .diff-easy { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+        .diff-medium { background: rgba(245, 158, 11, 0.15); color: var(--accent-yellow); }
+        .diff-hard { background: rgba(236, 72, 153, 0.15); color: var(--accent-pink); }
+        .diff-sysdesign { background: rgba(6, 182, 212, 0.18); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.4); }
+
+        .q-toggle { color: var(--text-muted); font-size: 1.2rem; transition: transform 0.3s; }
+        .q-card.open .q-toggle { transform: rotate(180deg); }
+
+        .q-answer {
+            padding: 0 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease-out, padding 0.35s ease;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid transparent;
+            font-size: 0.94rem;
+            line-height: 1.7;
+            color: #d1d5db;
+        }
+
+        .q-card.open .q-answer {
+            padding: 1.5rem;
+            max-height: 2500px;
+            border-top-color: var(--border);
+        }
+
+        .q-answer p { margin-bottom: 1rem; }
+        .q-answer ul, .q-answer ol { margin: 0 0 1rem 1.5rem; }
+        .q-answer li { margin-bottom: 0.4rem; }
+
+        pre {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.84rem;
+            color: #38bdf8;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .recruiter-tip {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 4px solid var(--accent-purple);
+            padding: 1.1rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.25rem 0 0.5rem;
+        }
+        .recruiter-tip h5 {
+            color: #c4b5fd;
+            font-size: 0.88rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .cmp-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.88rem;
+        }
+        .cmp-table th, .cmp-table td {
+            border: 1px solid var(--border);
+            padding: 0.6rem 0.9rem;
+            text-align: left;
+        }
+        .cmp-table th { background: rgba(255,255,255,0.05); color: var(--accent-cyan); }
+
+        .footer-nav {
+            max-width: 1000px;
+            margin: 4rem auto 0;
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+        .footer-nav a { color: #38bdf8; text-decoration: none; font-weight: 600; }
+        .footer-nav a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="badge">Senior Architect Prep</div>
+        <h1>Database Architecture & System Design Q&A</h1>
+        <p class="subtitle">100+ deep conceptual questions, situation-based architectural tradeoffs, real-world schema design simulations, and presentation strategies for technical hiring managers.</p>
+    </header>
+
+    <div class="controls">
+        <div class="filters">
+            <button class="filter-btn active" onclick="setFilter('all', this)">All Questions</button>
+            <button class="filter-btn" onclick="setFilter('easy', this)">Easy</button>
+            <button class="filter-btn" onclick="setFilter('medium', this)">Medium</button>
+            <button class="filter-btn" onclick="setFilter('hard', this)">Hard</button>
+            <button class="filter-btn" onclick="setFilter('sysdesign', this)">🏢 System Design Scenarios</button>
+        </div>
+        <input type="text" class="search-input" placeholder="Search keywords or concepts..." id="searchInput" oninput="filterQuestions()">
+    </div>
+
+    <main class="q-container" id="qContainer"></main>
+
+    <div class="footer-nav">
+        <a href="../index.html">← Back to Stage 2 Hub</a> &nbsp;|&nbsp; <a href="../slides/index.html">Launch Interactive Studio</a>
+    </div>
+
+<script>
+const interviewData = [
+// ────────────────────────────────────────────────────────
+// CATEGORY 1: ERD & RELATIONSHIPS
+// ────────────────────────────────────────────────────────
+{
+    cat: "ERD & Relationship Architecture", icon: "📐", color: "#38bdf8",
+    questions: [
+        {
+            q: "How do you model a Many-to-Many (M:N) relationship? Can you store direct foreign keys?",
+            d: "easy",
+            a: `<p>A relational engine cannot store arrays or lists of foreign keys inside a single atomic column without violating First Normal Form (1NF). To model a Many-to-Many relationship (e.g., Students and Courses), you must introduce an intermediate <strong>Junction (Association) Table</strong>.</p>
+<pre>CREATE TABLE enrollments (
+    student_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    enrolled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    grade VARCHAR(2),
+    PRIMARY KEY (student_id, course_id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+);</pre>
+<div class="recruiter-tip">
+    <h5>🎤 How to Present This</h5>
+    <p>"I always emphasize that junction tables shouldn't just be dumb foreign key bridges. They are the exact location where relationship lifecycle attributes live—such as enrollment timestamps, access scopes, or historical audit flags."</p>
+</div>`
+        },
+        {
+            q: "When would you deliberately choose a One-to-One (1:1) table split instead of keeping all columns in one table?",
+            d: "medium",
+            a: `<p>Splitting an entity across two tables with a strict 1:1 relationship is standard enterprise practice for three architectural scenarios:</p>
+<ul>
+    <li><strong>Security Isolation:</strong> Sensitive credentials or PII (password hashes, SSNs, 2FA backup codes) are placed into a restricted table with strict IAM access policies and encryption at rest.</li>
+    <li><strong>Performance & Lazy Loading:</strong> Large blobs or heavy markdown text columns (e.g., user bio, avatar images) are separated out so frequent queries fetching core user rows stay lightweight and cache-friendly.</li>
+    <li><strong>Table Lock Contention:</strong> Isolating high-frequency update columns (e.g., <code>last_active_timestamp</code>) from static metadata to avoid page locks during high traffic.</li>
+</ul>`
+        },
+        {
+            q: "How do you implement a hierarchical self-referencing entity (e.g., Employee Manager or Nested Comments)?",
+            d: "hard",
+            a: `<p>A self-referencing relationship occurs when a foreign key in a table points to the primary key of the same table.</p>
+<pre>CREATE TABLE categories (
+    category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parent_category_id INTEGER NULL,
+    name TEXT NOT NULL,
+    FOREIGN KEY (parent_category_id) REFERENCES categories(category_id) ON DELETE SET NULL
+);</pre>
+<p>To query arbitrary depth hierarchies in SQL, we use <strong>Recursive Common Table Expressions (CTEs)</strong>:</p>
+<pre>WITH RECURSIVE category_tree AS (
+    SELECT category_id, name, 1 AS depth 
+    FROM categories WHERE parent_category_id IS NULL
+    UNION ALL
+    SELECT c.category_id, c.name, t.depth + 1
+    FROM categories c JOIN category_tree t ON c.parent_category_id = t.category_id
+)
+SELECT * FROM category_tree ORDER BY depth;</pre>`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CATEGORY 2: KEYS ARCHITECTURE
+// ────────────────────────────────────────────────────────
+{
+    cat: "Keys & Distributed Identifiers", icon: "🔑", color: "#8b5cf6",
+    questions: [
+        {
+            q: "Compare Surrogate Keys vs Natural Keys. Why do senior architects strongly favor Surrogate Keys?",
+            d: "medium",
+            a: `<table class="cmp-table">
+    <tr><th>Criteria</th><th>Natural Key (e.g., Email, SSN)</th><th>Surrogate Key (e.g., BigInt ID, UUID)</th></tr>
+    <tr><td><strong>Business Mutability</strong></td><td>High risk. Users change emails or company tax IDs mutate over time.</td><td>Zero mutability. Completely decoupled from business reality.</td></tr>
+    <tr><td><strong>Cascading Cost</strong></td><td>Updating a natural key forces cascading locks across millions of child foreign keys.</td><td>Never updated. Child rows remain untouched forever.</td></tr>
+    <tr><td><strong>Index Size</strong></td><td>Wide strings cause bulky B-tree indexes and memory bloat.</td><td>Compact 8-byte integers or 16-byte binary structures.</td></tr>
+</table>
+<div class="recruiter-tip">
+    <h5>🎤 How to Present This</h5>
+    <p>"In my architecture reviews, I enforce a strict decoupling rule: every table gets an immutable Surrogate Key as its primary key anchor, and we protect business logic uniqueness by applying a separate <code>UNIQUE</code> index on the Natural Key."</p>
+</div>`
+        },
+        {
+            q: "In globally sharded distributed systems, why do standard AUTO_INCREMENT IDs fail? What should you use instead?",
+            d: "hard",
+            a: `<p>In single-master DBs, sequential auto-increment works well. But across 50 sharded database nodes in multi-master replication, coordinating sequential integers requires centralized global locks that throttle write speed to zero.</p>
+<h4>Modern Scalable Alternatives:</h4>
+<ul>
+    <li><strong>UUID v4 (Random):</strong> 128-bit random value generated offline. <em>Flaw:</em> Random insertion order destroys B-tree locality, causing massive index fragmentation and heavy disk I/O page splits!</li>
+    <li><strong>UUID v7 / ULID (Time-Ordered):</strong> Stores the Unix timestamp in the first 48 bits followed by random entropy. Gives you distributed offline generation PLUS sequential B-tree insertion speed!</li>
+    <li><strong>Twitter Snowflake ID:</strong> 64-bit integer combining Timestamp + Worker Node ID + Sequence Counter. Fits into standard 8-byte integers while guaranteeing time-ordered uniqueness at massive scale.</li>
+</ul>`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CATEGORY 3: CONSTRAINTS & REFERENTIAL INTEGRITY
+// ────────────────────────────────────────────────────────
+{
+    cat: "Constraints & Referential Integrity", icon: "🛡️", color: "#10b981",
+    questions: [
+        {
+            q: "Compare ON DELETE CASCADE vs ON DELETE RESTRICT vs ON DELETE SET NULL.",
+            d: "medium",
+            a: `<p>When a parent record is deleted, the database engine executes the configured referential action:</p>
+<ul>
+    <li><code>RESTRICT / NO ACTION</code>: Immediately aborts the transaction and throws a constraint error if child rows exist. Use for accounting ledgers or critical customer orders!</li>
+    <li><code>CASCADE</code>: Automatically deletes all linked child rows. Use for disposable child entities like user shopping cart items or session tokens.</li>
+    <li><code>SET NULL</code>: Sets the child foreign key column to NULL. Use when preserving historical audit records after an employee or product category is removed.</li>
+</ul>`
+        },
+        {
+            q: "When should you use a CHECK constraint versus a lookup reference table?",
+            d: "medium",
+            a: `<p>Use a <strong>CHECK constraint</strong> for small, immutable domain rules that rarely change (e.g., <code>CHECK (status IN ('active', 'closed'))</code> or <code>CHECK (price > 0)</code>).</p>
+<p>Use a dedicated **Lookup Reference Table** (with a Foreign Key) when the list of valid values is dynamic, administered by business users via UI, or requires additional descriptive metadata (e.g., product categories, tax regions, or country codes).</p>`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CATEGORY 4: NORMALIZATION MASTERY
+// ────────────────────────────────────────────────────────
+{
+    cat: "Normalization Mastery (1NF - 5NF)", icon: "🧼", color: "#ec4899",
+    questions: [
+        {
+            q: "Walk through decomposing a flat spreadsheet table into 3rd Normal Form (3NF).",
+            d: "hard",
+            a: `<p>Consider an unnormalized order report: <code>(order_id, cust_name, cust_email, item_sku, item_name, price)</code>.</p>
+<ol>
+    <li><strong>1NF (Atomicity):</strong> Separate multi-item orders so each row represents one atomic item ordered. Ensure a primary key exists.</li>
+    <li><strong>2NF (No Partial Dependencies):</strong> In a composite key table like <code>(order_id, item_sku)</code>, notice that <code>cust_name</code> depends ONLY on <code>order_id</code>, while <code>item_name</code> depends ONLY on <code>item_sku</code>. We split this into three tables: <code>orders</code>, <code>products</code>, and <code>order_items</code>.</li>
+    <li><strong>3NF (No Transitive Dependencies):</strong> If <code>orders</code> contains <code>cust_id</code>, <code>cust_name</code>, and <code>cust_email</code>, notice that email depends on <code>cust_id</code>, not directly on <code>order_id</code>. We extract customer details into a clean <code>customers</code> table!</li>
+</ol>`
+        },
+        {
+            q: "What is Boyce-Codd Normal Form (BCNF)? How does it differ from 3NF?",
+            d: "hard",
+            a: `<p>BCNF is a stricter version of 3NF. While 3NF allows non-key attributes to determine part of a composite candidate key, BCNF enforces a simple ironclad rule:</p>
+<p><strong>For every non-trivial functional dependency X → Y, X must be a Superkey / Candidate Key.</strong></p>
+<p>If attribute X determines Y, X cannot be just a regular non-key attribute. It must have the power to uniquely identify the entire row!</p>`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CATEGORY 5: SYSTEM DESIGN SCENARIOS
+// ────────────────────────────────────────────────────────
+{
+    cat: "Real-World System Design Scenarios", icon: "🏢", color: "#06b6d4",
+    questions: [
+        {
+            q: "[System Design] Design a high-concurrency E-Commerce Checkout & Cart Schema that prevents overselling stock.",
+            d: "sysdesign",
+            a: `<p>To handle high checkout volume while guaranteeing zero stock overselling, we decouple transient shopping carts from immutable inventory reservations:</p>
+<pre>-- 1. Inventory table with strict CHECK constraint:
+CREATE TABLE inventory (
+    sku VARCHAR(64) PRIMARY KEY,
+    available_qty INTEGER NOT NULL CHECK (available_qty >= 0),
+    reserved_qty INTEGER NOT NULL DEFAULT 0
+);
+
+-- 2. Checkout Orders with ACID atomic updates:
+-- When user submits order, execute atomic stock reduction inside a transaction:
+BEGIN TRANSACTION;
+UPDATE inventory 
+SET available_qty = available_qty - 2, 
+    reserved_qty = reserved_qty + 2
+WHERE sku = 'MACBOOK-PRO-16' AND available_qty >= 2;
+COMMIT;</pre>
+<div class="recruiter-tip">
+    <h5>🎤 How to Present This</h5>
+    <p>"By combining atomic SQL updates with a database-level <code>CHECK (available_qty >= 0)</code> constraint, any race condition where two users attempt to buy the final item simultaneously will fail at the engine level with zero application lock overhead."</p>
+</div>`
+        },
+        {
+            q: "[System Design] How do you design a Multi-Tenancy B2B SaaS schema? Compare Shared vs Isolated patterns.",
+            d: "sysdesign",
+            a: `<table class="cmp-table">
+    <tr><th>Pattern</th><th>Implementation</th><th>Pros & Cons</th></tr>
+    <tr><td><strong>Shared Database / Shared Schema</strong></td><td>Every table includes a mandatory <code>tenant_id UUID</code> foreign key column.</td><td>Pros: Lowest operational cost and connection pooling.<br>Cons: Requires strict Row-Level Security (RLS) to prevent data leak.</td></tr>
+    <tr><td><strong>Separate Schema per Tenant</strong></td><td>One shared DB server, but each client gets dedicated schema (<code>tenant_abc.users</code>).</td><td>Pros: Clean data isolation.<br>Cons: Migrations must run across 1,000 separate schemas.</td></tr>
+    <tr><td><strong>Separate Database per Tenant</strong></td><td>Dedicated database instance per enterprise client.</td><td>Pros: Ironclad HIPAA/SOC2 compliance & customized backups.<br>Cons: Extremely expensive infrastructure.</td></tr>
+</table>`
+        },
+        {
+            q: "[System Design] Design a Polymorphic Comment System (Comments on Posts, Videos, and Photos).",
+            d: "sysdesign",
+            a: `<p>When comments can attach to multiple distinct parent entities, architects choose between two primary design patterns:</p>
+<h4>Option A: Exclusive Foreign Keys (Recommended Enterprise Pattern)</h4>
+<pre>CREATE TABLE comments (
+    comment_id UUID PRIMARY KEY,
+    post_id UUID NULL REFERENCES posts(post_id),
+    video_id UUID NULL REFERENCES videos(video_id),
+    body TEXT NOT NULL,
+    CHECK (
+        (post_id IS NOT NULL AND video_id IS NULL) OR
+        (post_id IS NULL AND video_id IS NOT NULL)
+    )
+);</pre>
+<p><strong>Why it wins:</strong> Preserves 100% native database foreign key referential integrity and cascading deletes!</p>
+<h4>Option B: Polymorphic Association Table</h4>
+<p>Storing <code>(parent_id, parent_type)</code> strings. <em>Flaw:</em> You forfeit database foreign key constraints because a single column cannot reference multiple different tables!</p>`
+        },
+        {
+            q: "[System Design] How do you design an Immutable Financial Ledger Schema (Stripe / Banking style)?",
+            d: "sysdesign",
+            a: `<p>Financial systems NEVER update existing balance numbers (<code>UPDATE account SET balance = balance + 100</code>). Doing so destroys auditability and concurrency tracking.</p>
+<pre>CREATE TABLE ledger_entries (
+    entry_id UUID PRIMARY KEY,
+    account_id UUID NOT NULL REFERENCES accounts(id),
+    amount DECIMAL(15, 4) NOT NULL, -- Positive for Credit, Negative for Debit
+    transaction_type VARCHAR(32) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);</pre>
+<p>To calculate current balance, query: <code>SELECT SUM(amount) FROM ledger_entries WHERE account_id = ?;</code>. For speed over millions of rows, compute daily balance snapshots into a separate materialized view or rollup table!</p>`
+        }
+    ]
+}
+];
+
+let currentFilter = 'all';
+
+function renderQuestions() {
+    const container = document.getElementById('qContainer');
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    let html = '';
+
+    interviewData.forEach(group => {
+        const filteredQs = group.questions.filter(q => {
+            const matchFilter = (currentFilter === 'all') || (q.d === currentFilter);
+            const matchQuery = !query || q.q.toLowerCase().includes(query) || q.a.toLowerCase().includes(query);
+            return matchFilter && matchQuery;
+        });
+
+        if (filteredQs.length > 0) {
+            html += `<div class="category-group">
+                <div class="category-title"><span>${group.icon}</span> <span>${group.cat}</span></div>`;
+            
+            filteredQs.forEach((q, idx) => {
+                const diffLabel = q.d === 'sysdesign' ? 'System Design' : q.d;
+                html += `
+                <div class="q-card" onclick="toggleCard(this)">
+                    <div class="q-header">
+                        <div class="q-title">
+                            <span class="diff-badge diff-${q.d}">${diffLabel}</span>
+                            <span>${q.q}</span>
+                        </div>
+                        <span class="q-toggle">▼</span>
+                    </div>
+                    <div class="q-answer">${q.a}</div>
+                </div>`;
+            });
+            html += `</div>`;
+        }
+    });
+
+    if (!html) {
+        html = `<div style="text-align:center;padding:4rem;color:var(--text-muted)">No matching architecture questions found.</div>`;
+    }
+
+    container.innerHTML = html;
+}
+
+function toggleCard(card) {
+    card.classList.toggle('open');
+}
+
+function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderQuestions();
+}
+
+function filterQuestions() {
+    renderQuestions();
+}
+
+window.onload = renderQuestions;
+</script>
+</body>
+</html>
