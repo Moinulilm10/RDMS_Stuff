@@ -1,0 +1,3042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Fundamentals - Interactive Slides</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0b0d17;--bg2:#111827;--bg3:#1e2235;--bg4:#262b44;--accent:#6366f1;--accent2:#818cf8;--cyan:#22d3ee;--green:#34d399;--orange:#fbbf24;--pink:#f472b6;--red:#ef4444;--text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;--border:#2d3352;--editor-bg:#0d1117;--radius:12px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
+
+/* Sidebar */
+.sidebar{width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border)}
+.sidebar-header h2{font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.sidebar-header h2 span{font-size:1.2rem}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px}
+.sidebar-nav::-webkit-scrollbar{width:4px}
+.sidebar-nav::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.chapter-group{margin-bottom:4px}
+.chapter-btn{width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text2);font-size:0.82rem;font-family:inherit;cursor:pointer;border-radius:8px;transition:all .2s;display:flex;align-items:center;gap:10px;font-weight:500}
+.chapter-btn:hover{background:rgba(99,102,241,.1);color:var(--text)}
+.chapter-btn.active{background:rgba(99,102,241,.15);color:var(--accent2)}
+.chapter-num{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;background:var(--bg3);flex-shrink:0}
+.chapter-btn.active .chapter-num{background:var(--accent);color:#fff}
+.chapter-btn.completed .chapter-num{background:var(--green);color:#fff}
+.chapter-slides{display:none;padding:0 0 0 36px}
+.chapter-group.open .chapter-slides{display:block}
+.slide-link{display:block;padding:6px 12px;color:var(--text3);font-size:.78rem;cursor:pointer;border-radius:6px;transition:all .15s;border-left:2px solid transparent;margin:2px 0}
+.slide-link:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.slide-link.active{color:var(--accent2);border-left-color:var(--accent);background:rgba(99,102,241,.08)}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* Top Bar */
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.nav-controls{display:flex;align-items:center;gap:12px}
+.nav-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:1rem}
+.nav-btn:hover:not(:disabled){background:var(--accent);border-color:var(--accent)}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed}
+.slide-counter{font-size:.85rem;color:var(--text2);font-weight:500;min-width:80px;text-align:center}
+.progress-bar{flex:1;max-width:300px;height:4px;background:var(--bg3);border-radius:4px;overflow:hidden;margin:0 16px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan));border-radius:4px;transition:width .4s ease}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.theme-btn,.reset-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.78rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.theme-btn:hover,.reset-btn:hover{border-color:var(--accent);color:var(--text)}
+
+/* Content Area */
+.content-area{flex:1;display:flex;overflow:hidden}
+.slide-content{flex:1;overflow-y:auto;padding:40px 48px;min-width:0}
+.slide-content::-webkit-scrollbar{width:6px}
+.slide-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* Slide Typography */
+.slide-chapter-label{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent2);font-weight:600;margin-bottom:8px}
+.slide-title{font-size:2rem;font-weight:800;margin-bottom:8px;line-height:1.2}
+.slide-subtitle{font-size:1rem;color:var(--text2);margin-bottom:28px;line-height:1.6}
+.slide-body{font-size:.92rem;line-height:1.8;color:var(--text)}
+.slide-body h3{font-size:1.15rem;font-weight:700;margin:24px 0 12px;color:var(--text);display:flex;align-items:center;gap:8px}
+.slide-body h4{font-size:1rem;font-weight:600;margin:18px 0 8px;color:var(--accent2)}
+.slide-body p{margin-bottom:14px}
+.slide-body ul,.slide-body ol{margin:0 0 16px 20px}
+.slide-body li{margin-bottom:6px;color:var(--text2)}
+.slide-body li strong{color:var(--text)}
+.slide-body code{background:var(--bg3);padding:2px 8px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:.84rem;color:var(--cyan)}
+.slide-body pre{background:var(--editor-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin:12px 0 16px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.7;color:var(--text2)}
+
+/* Info Boxes */
+.info-box{padding:16px 20px;border-radius:var(--radius);margin:16px 0;border-left:4px solid}
+.info-box.tip{background:rgba(34,211,238,.06);border-color:var(--cyan)}
+.info-box.warn{background:rgba(251,191,36,.06);border-color:var(--orange)}
+.info-box.danger{background:rgba(239,68,68,.06);border-color:var(--red)}
+.info-box.success{background:rgba(52,211,153,.06);border-color:var(--green)}
+.info-box-title{font-weight:700;font-size:.85rem;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.info-box.tip .info-box-title{color:var(--cyan)}
+.info-box.warn .info-box-title{color:var(--orange)}
+.info-box.danger .info-box-title{color:var(--red)}
+.info-box.success .info-box-title{color:var(--green)}
+.info-box p,.info-box ul{font-size:.85rem;color:var(--text2);margin:0}
+.info-box li{margin-bottom:4px}
+
+/* Comparison Table */
+.cmp-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.85rem}
+.cmp-table th{background:var(--bg3);padding:10px 14px;text-align:left;font-weight:600;color:var(--text);border:1px solid var(--border)}
+.cmp-table td{padding:10px 14px;border:1px solid var(--border);color:var(--text2)}
+.cmp-table tr:hover td{background:rgba(99,102,241,.04)}
+
+/* Venn / Visual Diagrams */
+.visual-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:16px 0;text-align:center}
+.join-visual{display:flex;align-items:center;justify-content:center;gap:0;margin:16px 0}
+.join-circle{width:120px;height:120px;border-radius:50%;border:3px solid;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem}
+.join-circle.left{border-color:var(--accent);color:var(--accent);margin-right:-30px;z-index:1}
+.join-circle.right{border-color:var(--green);color:var(--green)}
+.join-highlight{position:absolute;background:rgba(99,102,241,.2);border-radius:50%}
+
+/* Pros/Cons */
+.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.pros,.cons{padding:16px;border-radius:var(--radius);font-size:.85rem}
+.pros{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2)}
+.cons{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2)}
+.pros h4{color:var(--green);margin:0 0 8px}
+.cons h4{color:var(--red);margin:0 0 8px}
+.pros li,.cons li{color:var(--text2);margin-bottom:4px}
+
+/* SQL Editor Panel */
+.editor-panel{width:480px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.editor-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.editor-header h3{font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:8px}
+.editor-header h3::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--green)}
+.run-btn{padding:7px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:6px}
+.run-btn:hover{background:#4f46e5;transform:translateY(-1px);box-shadow:0 4px 15px rgba(99,102,241,.3)}
+.run-btn:active{transform:translateY(0)}
+.sql-editor{flex:1;display:flex;flex-direction:column;min-height:0}
+.sql-input{flex:1;min-height:150px;background:var(--editor-bg);color:var(--cyan);border:none;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:.85rem;line-height:1.7;resize:none;outline:none}
+.sql-input::placeholder{color:var(--text3)}
+.output-header{padding:10px 20px;background:var(--bg3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:.78rem;font-weight:600;color:var(--text2);display:flex;align-items:center;justify-content:space-between}
+.output-area{flex:1;overflow:auto;padding:0;min-height:120px;background:var(--editor-bg)}
+.output-area::-webkit-scrollbar{width:4px;height:4px}
+.output-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* Result Table */
+.result-table{width:100%;border-collapse:collapse;font-size:.8rem;font-family:'JetBrains Mono',monospace}
+.result-table th{background:var(--bg3);padding:8px 12px;text-align:left;color:var(--accent2);font-weight:600;border-bottom:2px solid var(--accent);position:sticky;top:0;white-space:nowrap}
+.result-table td{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text2);white-space:nowrap}
+.result-table tr:hover td{background:rgba(99,102,241,.06)}
+.result-message{padding:16px 20px;font-size:.85rem;color:var(--text2)}
+.result-error{padding:16px 20px;font-size:.85rem;color:var(--red)}
+.result-success{padding:16px 20px;font-size:.85rem;color:var(--green)}
+.exec-time{color:var(--text3);font-size:.7rem}
+.rows-affected{color:var(--green);font-size:.75rem}
+
+/* Keyboard hint */
+.kbd{display:inline-block;padding:2px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--text2)}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.slide-content.animate .slide-chapter-label,.slide-content.animate .slide-title,.slide-content.animate .slide-subtitle,.slide-content.animate .slide-body{animation:fadeIn .4s ease both}
+.slide-content.animate .slide-title{animation-delay:.05s}
+.slide-content.animate .slide-subtitle{animation-delay:.1s}
+.slide-content.animate .slide-body{animation-delay:.15s}
+
+/* Responsive */
+@media(max-width:1200px){.editor-panel{width:400px}.slide-content{padding:30px 32px}}
+@media(max-width:900px){.sidebar{display:none}.editor-panel{width:100%;position:fixed;bottom:0;left:0;right:0;height:45vh;z-index:100}.content-area{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h2><span>🗄️</span> SQL Fundamentals</h2>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+</aside>
+
+<!-- Main -->
+<div class="main">
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="nav-controls">
+            <button class="nav-btn" id="prevBtn" onclick="prevSlide()" title="Previous (←)">‹</button>
+            <span class="slide-counter" id="slideCounter">1 / 1</span>
+            <button class="nav-btn" id="nextBtn" onclick="nextSlide()" title="Next (→)">›</button>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="topbar-right">
+            <span style="font-size:.75rem;color:var(--text3)"><span class="kbd">←</span> <span class="kbd">→</span> Navigate &nbsp; <span class="kbd">Ctrl+Enter</span> Run SQL</span>
+            <button class="reset-btn" onclick="resetDB()">↺ Reset DB</button>
+        </div>
+    </div>
+    <!-- Content -->
+    <div class="content-area">
+        <div class="slide-content" id="slideContent"></div>
+        <div class="editor-panel">
+            <div class="editor-header">
+                <h3>SQL Editor (SQLite)</h3>
+                <button class="run-btn" onclick="runSQL()">▶ Run <span class="kbd" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7)">Ctrl+↵</span></button>
+            </div>
+            <div class="sql-editor">
+                <textarea class="sql-input" id="sqlInput" placeholder="-- Write your SQL here and click Run..." spellcheck="false"></textarea>
+            </div>
+            <div class="output-header">
+                <span>Output</span>
+                <span id="execInfo"></span>
+            </div>
+            <div class="output-area" id="outputArea">
+                <div class="result-message">Run a query to see results here.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+// SLIDE DATA
+// ──────────────────────────────────────────────
+const chapters = [
+{name:"Database Basics",icon:"🏗️",color:"#6366f1",slides:[
+{title:"What is a Database?",subtitle:"The foundation of data management",content:`
+<div class="slide-body">
+<h3>📦 Definition</h3>
+<p>A <strong>database</strong> is an organized collection of structured data stored electronically. Think of it as a super-powered spreadsheet that can handle millions of rows, enforce rules, and let multiple users access data simultaneously.</p>
+
+<h3>🔑 Key Characteristics</h3>
+<ul>
+<li><strong>Persistent Storage</strong> — Data survives application restarts and crashes</li>
+<li><strong>Structured Organization</strong> — Data follows a predefined schema</li>
+<li><strong>Concurrent Access</strong> — Multiple users can read/write simultaneously</li>
+<li><strong>Query Language</strong> — SQL provides powerful data retrieval</li>
+<li><strong>ACID Compliance</strong> — Guarantees data integrity</li>
+</ul>
+
+<h3>🏢 What is an RDBMS?</h3>
+<p>A <strong>Relational Database Management System (RDBMS)</strong> stores data in tables with rows and columns, linked by relationships (foreign keys). Popular RDBMS: PostgreSQL, MySQL, SQL Server, Oracle, SQLite.</p>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 When to Use</div>
+<p>Use an RDBMS when you need structured data with relationships, ACID transactions, complex queries, and data integrity constraints. Most business applications, financial systems, and e-commerce platforms use RDBMS.</p>
+</div>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ When NOT to Use</div>
+<p>Avoid RDBMS for unstructured data (logs, documents), rapidly changing schemas, or when you need horizontal scaling across hundreds of servers. Consider NoSQL alternatives instead.</p>
+</div>
+</div>`,sql:`-- Let's explore our sample database!
+-- See all tables in our SQLite database:
+SELECT name, type FROM sqlite_master
+WHERE type='table'
+ORDER BY name;`},
+
+{title:"SQL vs NoSQL",subtitle:"Choosing the right database paradigm",content:`
+<div class="slide-body">
+<h3>⚔️ The Great Debate</h3>
+<table class="cmp-table">
+<tr><th>Feature</th><th>SQL (Relational)</th><th>NoSQL</th></tr>
+<tr><td><strong>Data Model</strong></td><td>Tables with rows & columns</td><td>Documents, Key-Value, Graph, Columnar</td></tr>
+<tr><td><strong>Schema</strong></td><td>Fixed, predefined schema</td><td>Dynamic, flexible schema</td></tr>
+<tr><td><strong>Scaling</strong></td><td>Vertical (bigger server)</td><td>Horizontal (more servers)</td></tr>
+<tr><td><strong>Transactions</strong></td><td>Full ACID support</td><td>Eventually consistent (mostly)</td></tr>
+<tr><td><strong>Joins</strong></td><td>Native JOIN support</td><td>Manual / Denormalized</td></tr>
+<tr><td><strong>Query Language</strong></td><td>Standardized SQL</td><td>Database-specific APIs</td></tr>
+<tr><td><strong>Best For</strong></td><td>Complex queries, relationships</td><td>High throughput, flexible data</td></tr>
+<tr><td><strong>Examples</strong></td><td>PostgreSQL, MySQL, Oracle</td><td>MongoDB, Redis, Cassandra, Neo4j</td></tr>
+</table>
+
+<div class="pros-cons">
+<div class="pros"><h4>✅ SQL Pros</h4><ul>
+<li>Data integrity via constraints</li>
+<li>Complex queries with JOINs</li>
+<li>Standardized language</li>
+<li>Mature ecosystem & tooling</li>
+<li>ACID transactions</li>
+</ul></div>
+<div class="cons"><h4>❌ SQL Cons</h4><ul>
+<li>Rigid schema changes are costly</li>
+<li>Vertical scaling has limits</li>
+<li>Object-relational impedance mismatch</li>
+<li>Not ideal for hierarchical data</li>
+<li>Can be slower for simple lookups</li>
+</ul></div>
+</div>
+
+<div class="info-box success">
+<div class="info-box-title">🎯 Rule of Thumb</div>
+<p>If your data has relationships and you need consistency → <strong>SQL</strong>. If you need flexibility and massive horizontal scale → <strong>NoSQL</strong>. Many modern systems use <strong>both</strong> (polyglot persistence).</p>
+</div>
+</div>`,sql:`-- SQL databases use structured tables
+-- Let's see the structure of our employees table:
+PRAGMA table_info(employees);`},
+
+{title:"Server, Instance, Schema",subtitle:"Understanding the database architecture",content:`
+<div class="slide-body">
+<h3>🖥️ Database Server</h3>
+<p>The physical or virtual machine running the database software. It handles network connections, manages memory, and stores data on disk.</p>
+
+<h3>📋 Database Instance</h3>
+<p>A running copy of the database software in memory. One server can run multiple instances. Each instance has its own memory allocation, processes, and configuration.</p>
+
+<pre>Server (Hardware/VM)
+ └── Instance 1 (PostgreSQL process)
+      ├── Database: ecommerce
+      │    ├── Schema: public
+      │    │    ├── Table: users
+      │    │    ├── Table: orders
+      │    │    └── Table: products
+      │    └── Schema: analytics
+      │         └── Table: page_views
+      └── Database: blog
+           └── Schema: public
+                ├── Table: posts
+                └── Table: comments</pre>
+
+<h3>📁 Database Schema</h3>
+<p>A <strong>schema</strong> is a logical container (namespace) within a database that groups related tables, views, and other objects. It provides organization and access control.</p>
+
+<h3>📊 Tables, Rows, Columns</h3>
+<ul>
+<li><strong>Table</strong> — A collection of related data organized in rows and columns (like a spreadsheet)</li>
+<li><strong>Row (Tuple)</strong> — A single record in the table (one employee, one order)</li>
+<li><strong>Column (Attribute)</strong> — A specific field/property (name, salary, email)</li>
+<li><strong>Record</strong> — Same as a row; the terms are interchangeable</li>
+<li><strong>Metadata</strong> — Data about data: column types, constraints, indexes, statistics</li>
+</ul>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Deep Dive</div>
+<p>Schemas help with multi-tenant applications. You can have a separate schema per customer, each with identical table structures, providing data isolation without separate databases.</p>
+</div>
+</div>`,sql:`-- Explore the structure of our database
+-- See all tables:
+SELECT name FROM sqlite_master WHERE type='table';
+
+-- See column info for employees:
+-- PRAGMA table_info(employees);
+
+-- Count rows in each table:
+-- SELECT 'employees' as tbl, COUNT(*) as rows FROM employees
+-- UNION ALL SELECT 'departments', COUNT(*) FROM departments
+-- UNION ALL SELECT 'products', COUNT(*) FROM products;`}
+]},
+
+{name:"Data Types",icon:"🔢",color:"#7c3aed",slides:[
+{title:"Numeric Data Types",subtitle:"Integers, decimals, and floating-point numbers",content:`
+<div class="slide-body">
+<h3>🔢 Integer Types</h3>
+<table class="cmp-table">
+<tr><th>Type</th><th>Storage</th><th>Range</th><th>Use Case</th></tr>
+<tr><td><code>SMALLINT</code></td><td>2 bytes</td><td>-32,768 to 32,767</td><td>Age, small counts</td></tr>
+<tr><td><code>INTEGER / INT</code></td><td>4 bytes</td><td>-2.1B to 2.1B</td><td>Primary keys, quantities</td></tr>
+<tr><td><code>BIGINT</code></td><td>8 bytes</td><td>-9.2×10¹⁸ to 9.2×10¹⁸</td><td>Large IDs, timestamps</td></tr>
+<tr><td><code>SERIAL</code></td><td>4 bytes</td><td>Auto-incrementing INT</td><td>Auto-generated PKs</td></tr>
+</table>
+
+<h3>💰 Exact Numeric Types</h3>
+<table class="cmp-table">
+<tr><th>Type</th><th>Description</th><th>Use Case</th></tr>
+<tr><td><code>DECIMAL(p,s)</code></td><td>Exact precision; p=total digits, s=decimal places</td><td>Money: DECIMAL(10,2)</td></tr>
+<tr><td><code>NUMERIC(p,s)</code></td><td>Same as DECIMAL (alias)</td><td>Financial calculations</td></tr>
+</table>
+
+<h3>📊 Approximate Numeric Types</h3>
+<table class="cmp-table">
+<tr><th>Type</th><th>Storage</th><th>Precision</th><th>Use Case</th></tr>
+<tr><td><code>REAL / FLOAT4</code></td><td>4 bytes</td><td>6 decimal digits</td><td>Scientific data</td></tr>
+<tr><td><code>DOUBLE / FLOAT8</code></td><td>8 bytes</td><td>15 decimal digits</td><td>Engineering calculations</td></tr>
+</table>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 Critical: Never Use FLOAT for Money!</div>
+<p><code>FLOAT</code> causes rounding errors: <code>0.1 + 0.2 = 0.30000000000000004</code>. Always use <code>DECIMAL</code> or store cents as <code>INTEGER</code> for financial data.</p>
+</div>
+
+<div class="pros-cons">
+<div class="pros"><h4>✅ When to Use INTEGER</h4><ul>
+<li>Primary keys & foreign keys</li>
+<li>Counts, quantities, ages</li>
+<li>Boolean flags (0/1 in SQLite)</li>
+<li>Fastest comparisons & sorting</li>
+</ul></div>
+<div class="cons"><h4>❌ When NOT to Use FLOAT</h4><ul>
+<li>Money or financial calculations</li>
+<li>Exact equality comparisons</li>
+<li>Cumulative sums (errors compound)</li>
+<li>Any precision-critical applications</li>
+</ul></div>
+</div>
+</div>`,sql:`-- Numeric types demonstration
+-- Float precision issue:
+SELECT 0.1 + 0.2 AS float_result;
+
+-- Compare with exact arithmetic:
+-- In SQLite, all numbers are stored as either
+-- INTEGER or REAL (8-byte IEEE float)
+
+-- See salaries (stored as REAL in our DB):
+SELECT first_name, salary,
+       ROUND(salary * 1.1, 2) AS with_raise,
+       CAST(salary AS INTEGER) AS salary_int
+FROM employees
+ORDER BY salary DESC
+LIMIT 5;`},
+
+{title:"String & Text Types",subtitle:"Characters, variable strings, and large text",content:`
+<div class="slide-body">
+<h3>📝 String Types Comparison</h3>
+<table class="cmp-table">
+<tr><th>Type</th><th>Storage</th><th>Max Length</th><th>Padding</th><th>Use Case</th></tr>
+<tr><td><code>CHAR(n)</code></td><td>Fixed n bytes</td><td>Usually 255</td><td>Right-padded with spaces</td><td>Fixed-length codes: CHAR(2) for country</td></tr>
+<tr><td><code>VARCHAR(n)</code></td><td>Variable, up to n</td><td>Usually 65,535</td><td>No padding</td><td>Names, emails, titles</td></tr>
+<tr><td><code>TEXT</code></td><td>Variable, unlimited</td><td>~1GB+ (varies)</td><td>No padding</td><td>Blog posts, descriptions, comments</td></tr>
+</table>
+
+<h3>🔍 Key Differences</h3>
+<ul>
+<li><strong>CHAR</strong> — Faster for fixed-length data (country codes, zip codes), wastes space if data varies</li>
+<li><strong>VARCHAR</strong> — Best general-purpose string type, stores only what's needed + length prefix</li>
+<li><strong>TEXT</strong> — For large strings; some DBs store it out-of-row, making queries slower</li>
+</ul>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Performance Tip</div>
+<ul>
+<li>Use <code>CHAR</code> for fixed-length data like ISO country codes, state abbreviations</li>
+<li>Use <code>VARCHAR(255)</code> for most string columns — it's the sweet spot</li>
+<li>Use <code>TEXT</code> only when content can exceed VARCHAR limits</li>
+<li>Always define a reasonable max length for <code>VARCHAR</code> to prevent abuse</li>
+</ul>
+</div>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ Common Mistake</div>
+<p>Using <code>VARCHAR(5000)</code> "just in case" doesn't waste storage, but it affects memory allocation during query processing. Some databases allocate memory based on max column size for temp tables and sorts.</p>
+</div>
+</div>`,sql:`-- String operations in SQL
+SELECT first_name,
+       LENGTH(first_name) AS name_length,
+       UPPER(first_name) AS upper_name,
+       LOWER(last_name) AS lower_last,
+       first_name || ' ' || last_name AS full_name,
+       SUBSTR(email, 1, INSTR(email, '@')-1) AS username
+FROM employees
+LIMIT 8;`},
+
+{title:"Date, Time & Special Types",subtitle:"Temporal data, JSON, UUID, and Enums",content:`
+<div class="slide-body">
+<h3>📅 Date & Time Types</h3>
+<table class="cmp-table">
+<tr><th>Type</th><th>Format</th><th>Storage</th><th>Use Case</th></tr>
+<tr><td><code>DATE</code></td><td>YYYY-MM-DD</td><td>4 bytes</td><td>Birthdays, deadlines</td></tr>
+<tr><td><code>TIME</code></td><td>HH:MM:SS</td><td>8 bytes</td><td>Daily schedules</td></tr>
+<tr><td><code>TIMESTAMP</code></td><td>YYYY-MM-DD HH:MM:SS</td><td>8 bytes</td><td>Event logs, created_at</td></tr>
+<tr><td><code>TIMESTAMPTZ</code></td><td>Timestamp + timezone</td><td>8 bytes</td><td>Global applications</td></tr>
+<tr><td><code>INTERVAL</code></td><td>Time duration</td><td>16 bytes</td><td>Duration calculations</td></tr>
+</table>
+
+<h3>🧬 Special Types</h3>
+<table class="cmp-table">
+<tr><th>Type</th><th>Description</th><th>Use Case</th></tr>
+<tr><td><code>BOOLEAN</code></td><td>TRUE/FALSE (or 1/0)</td><td>Flags: is_active, is_verified</td></tr>
+<tr><td><code>JSON / JSONB</code></td><td>JSON data (JSONB is binary)</td><td>Flexible schemas, API responses, settings</td></tr>
+<tr><td><code>UUID</code></td><td>128-bit unique identifier</td><td>Distributed IDs, public-facing keys</td></tr>
+<tr><td><code>ENUM</code></td><td>Predefined set of values</td><td>Status: 'active','inactive','pending'</td></tr>
+<tr><td><code>ARRAY</code></td><td>Array of values (PostgreSQL)</td><td>Tags, multiple values</td></tr>
+</table>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 UUID vs Auto-increment ID</div>
+<ul>
+<li><strong>UUID</strong>: Safe for distributed systems, no central coordination needed, but larger (16 bytes vs 4), slower indexing</li>
+<li><strong>Auto-increment</strong>: Faster, smaller, sequential (great for B-tree indexes), but reveals record count and creation order</li>
+<li><strong>Best Practice</strong>: Use auto-increment internally, UUID for public-facing IDs (API responses, URLs)</li>
+</ul>
+</div>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ ENUM Caution</div>
+<p>ENUMs are hard to modify after creation in many databases. Adding or removing values requires ALTER TYPE. Consider using a VARCHAR with a CHECK constraint or a lookup table instead for values that may change.</p>
+</div>
+</div>`,sql:`-- Date and time operations
+SELECT first_name,
+       hire_date,
+       DATE('now') AS today,
+       JULIANDAY('now') - JULIANDAY(hire_date) AS days_employed,
+       CAST((JULIANDAY('now') - JULIANDAY(hire_date)) / 365.25 AS INT) AS years_employed,
+       CASE
+         WHEN JULIANDAY('now') - JULIANDAY(hire_date) > 1825 THEN 'Senior'
+         WHEN JULIANDAY('now') - JULIANDAY(hire_date) > 730 THEN 'Mid-level'
+         ELSE 'Junior'
+       END AS experience_level
+FROM employees
+ORDER BY hire_date
+LIMIT 8;`}
+]},
+
+{name:"Constraints",icon:"🔒",color:"#06b6d4",slides:[
+{title:"Primary & Foreign Keys",subtitle:"Enforcing data integrity and relationships",content:`
+<div class="slide-body">
+<h3>🔑 PRIMARY KEY</h3>
+<p>Uniquely identifies each row in a table. Cannot be NULL and must be unique. Every table should have one.</p>
+<pre>CREATE TABLE employees (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,  -- Auto-generated
+    email TEXT UNIQUE NOT NULL
+);
+-- Composite Primary Key:
+CREATE TABLE enrollment (
+    student_id INT,
+    course_id INT,
+    PRIMARY KEY (student_id, course_id)    -- Two columns together
+);</pre>
+
+<h3>🔗 FOREIGN KEY</h3>
+<p>Creates a link between two tables. The FK column must reference an existing PK value in the parent table (referential integrity).</p>
+<pre>CREATE TABLE orders (
+    id INTEGER PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+        ON DELETE CASCADE        -- Delete orders when customer deleted
+        ON UPDATE SET NULL       -- Set to NULL if customer ID changes
+);</pre>
+
+<h4>FK Actions on DELETE/UPDATE:</h4>
+<table class="cmp-table">
+<tr><th>Action</th><th>Behavior</th></tr>
+<tr><td><code>CASCADE</code></td><td>Delete/update child rows automatically</td></tr>
+<tr><td><code>SET NULL</code></td><td>Set FK to NULL in child rows</td></tr>
+<tr><td><code>SET DEFAULT</code></td><td>Set FK to default value</td></tr>
+<tr><td><code>RESTRICT</code></td><td>Prevent delete/update if children exist</td></tr>
+<tr><td><code>NO ACTION</code></td><td>Same as RESTRICT (checked at end of statement)</td></tr>
+</table>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 Common Mistake</div>
+<p>In SQLite, foreign key enforcement is OFF by default! You must run <code>PRAGMA foreign_keys = ON;</code> to enable it. In PostgreSQL/MySQL, it's always on.</p>
+</div>
+</div>`,sql:`-- Enable foreign keys in SQLite
+PRAGMA foreign_keys = ON;
+
+-- See which tables reference which:
+SELECT 
+    m.name AS table_name,
+    p."table" AS references_table,
+    p."from" AS fk_column,
+    p."to" AS references_column
+FROM sqlite_master m
+JOIN pragma_foreign_key_list(m.name) p
+WHERE m.type = 'table'
+ORDER BY m.name;`},
+
+{title:"UNIQUE, NOT NULL, CHECK, DEFAULT",subtitle:"Column-level constraints for data quality",content:`
+<div class="slide-body">
+<h3>Constraint Types</h3>
+
+<h4>🚫 NOT NULL — Prevents empty values</h4>
+<pre>CREATE TABLE users (
+    name TEXT NOT NULL,        -- Must provide a name
+    bio TEXT                   -- Bio is optional (nullable)
+);</pre>
+
+<h4>🦄 UNIQUE — No duplicate values allowed</h4>
+<pre>CREATE TABLE users (
+    email TEXT UNIQUE,         -- No two users can share email
+    -- Composite unique:
+    UNIQUE(first_name, last_name)  -- Same combo not allowed
+);</pre>
+
+<h4>✅ CHECK — Custom validation rules</h4>
+<pre>CREATE TABLE products (
+    price REAL CHECK(price > 0),              -- Must be positive
+    stock INT CHECK(stock >= 0),              -- Can't be negative
+    status TEXT CHECK(status IN ('active', 'draft', 'archived')),
+    start_date TEXT,
+    end_date TEXT,
+    CHECK(end_date > start_date)              -- Table-level check
+);</pre>
+
+<h4>📌 DEFAULT — Auto-fill when not specified</h4>
+<pre>CREATE TABLE posts (
+    status TEXT DEFAULT 'draft',
+    created_at TEXT DEFAULT (datetime('now')),
+    view_count INT DEFAULT 0
+);</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Best Practices</div>
+<ul>
+<li>Always use <code>NOT NULL</code> unless you have a specific reason for NULLs</li>
+<li>Use <code>CHECK</code> constraints to enforce business rules at the database level</li>
+<li>Prefer <code>CHECK</code> constraints over ENUM for values that may change</li>
+<li>Use <code>DEFAULT</code> for timestamps, status fields, and counters</li>
+</ul>
+</div>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ Performance Note</div>
+<p>Constraints add overhead on INSERT/UPDATE. For bulk loading millions of rows, some teams temporarily disable constraints, load data, then re-enable and validate. Use with extreme caution.</p>
+</div>
+</div>`,sql:`-- Constraint demonstrations
+
+-- This works - valid data:
+INSERT INTO products (id, name, category, price, stock) 
+VALUES (999, 'Test Widget', 'Electronics', 29.99, 10);
+
+-- Verify it was inserted:
+SELECT * FROM products WHERE id = 999;
+
+-- Clean up:
+-- DELETE FROM products WHERE id = 999;`}
+]},
+
+{name:"CRUD Operations",icon:"✏️",color:"#10b981",slides:[
+{title:"INSERT — Creating Data",subtitle:"Adding new records to tables",content:`
+<div class="slide-body">
+<h3>📥 INSERT Syntax</h3>
+<pre>-- Single row:
+INSERT INTO table_name (col1, col2, col3) 
+VALUES (val1, val2, val3);
+
+-- Multiple rows (batch insert — much faster!):
+INSERT INTO table_name (col1, col2) VALUES
+    (val1a, val2a),
+    (val1b, val2b),
+    (val1c, val2c);
+
+-- Insert from SELECT:
+INSERT INTO archive_orders (id, total)
+SELECT id, total_price FROM orders WHERE status = 'completed';
+
+-- Insert with DEFAULT:
+INSERT INTO users (name) VALUES ('John');  
+-- Other columns get their DEFAULT values</pre>
+
+<h3>🔄 UPSERT (INSERT or UPDATE)</h3>
+<pre>-- SQLite syntax:
+INSERT INTO products (id, name, price, stock)
+VALUES (1, 'Widget', 19.99, 100)
+ON CONFLICT(id) DO UPDATE SET
+    price = excluded.price,
+    stock = excluded.stock;
+
+-- PostgreSQL syntax:
+-- INSERT ... ON CONFLICT ... DO UPDATE SET ...
+-- MySQL syntax:
+-- INSERT ... ON DUPLICATE KEY UPDATE ...</pre>
+
+<div class="pros-cons">
+<div class="pros"><h4>✅ Best Practices</h4><ul>
+<li>Always specify column names explicitly</li>
+<li>Use batch INSERT for multiple rows</li>
+<li>Use transactions for bulk inserts</li>
+<li>Validate data before inserting</li>
+</ul></div>
+<div class="cons"><h4>❌ Common Mistakes</h4><ul>
+<li>Not specifying columns (fragile if table changes)</li>
+<li>Inserting one row at a time in a loop</li>
+<li>Ignoring constraint violations</li>
+<li>Not escaping/parameterizing values (SQL injection!)</li>
+</ul></div>
+</div>
+</div>`,sql:`-- INSERT examples
+
+-- Single insert:
+INSERT INTO customers (id, name, email, city, country, created_at)
+VALUES (100, 'Jane Smith', 'jane@example.com', 'New York', 'USA', '2024-01-15');
+
+-- Batch insert:
+INSERT INTO customers (id, name, email, city, country, created_at) VALUES
+(101, 'Bob Wilson', 'bob@example.com', 'London', 'UK', '2024-02-10'),
+(102, 'Alice Chen', 'alice@example.com', 'Tokyo', 'Japan', '2024-03-20');
+
+-- Verify:
+SELECT * FROM customers WHERE id >= 100;`},
+
+{title:"SELECT — Reading Data",subtitle:"Querying and retrieving data from tables",content:`
+<div class="slide-body">
+<h3>🔍 SELECT Syntax</h3>
+<pre>-- All columns:
+SELECT * FROM employees;
+
+-- Specific columns:
+SELECT first_name, last_name, salary FROM employees;
+
+-- With aliases:
+SELECT first_name AS "First Name",
+       salary * 12 AS annual_salary
+FROM employees;
+
+-- DISTINCT — Remove duplicates:
+SELECT DISTINCT department_id FROM employees;
+SELECT DISTINCT city, country FROM customers;</pre>
+
+<h3>📋 SELECT Execution Order</h3>
+<p>SQL doesn't execute in the order you write it. Understanding the actual order is crucial:</p>
+<pre>-- Written order:    SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT
+-- Execution order:  FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Why Execution Order Matters</div>
+<ul>
+<li>You can't use column aliases in WHERE (SELECT runs after WHERE)</li>
+<li>You CAN use aliases in ORDER BY (runs after SELECT)</li>
+<li>HAVING filters after GROUP BY, WHERE filters before</li>
+<li>Understanding this prevents 90% of beginner SQL errors</li>
+</ul>
+</div>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ Avoid SELECT *</div>
+<p>In production code, always list specific columns. <code>SELECT *</code> retrieves unnecessary data, breaks when columns are added/removed, and prevents index-only scans. Use it only for exploration.</p>
+</div>
+</div>`,sql:`-- SELECT demonstrations
+-- Basic select with computed columns:
+SELECT 
+    first_name || ' ' || last_name AS full_name,
+    department_id AS dept,
+    salary,
+    ROUND(salary / 12, 2) AS monthly_salary,
+    CASE WHEN salary > 80000 THEN '⭐ High' 
+         WHEN salary > 50000 THEN '🔵 Mid' 
+         ELSE '🟢 Entry' END AS salary_tier
+FROM employees
+ORDER BY salary DESC;`},
+
+{title:"UPDATE & DELETE",subtitle:"Modifying and removing existing data",content:`
+<div class="slide-body">
+<h3>✏️ UPDATE Syntax</h3>
+<pre>-- Update specific rows:
+UPDATE employees SET salary = salary * 1.10
+WHERE department_id = 1;
+
+-- Update multiple columns:
+UPDATE employees 
+SET salary = 95000, 
+    is_active = 1
+WHERE id = 5;
+
+-- Update with subquery:
+UPDATE employees SET salary = (
+    SELECT AVG(salary) FROM employees
+) WHERE salary < 30000;</pre>
+
+<h3>🗑️ DELETE Syntax</h3>
+<pre>-- Delete specific rows:
+DELETE FROM employees WHERE id = 10;
+
+-- Delete with condition:
+DELETE FROM orders WHERE order_date < '2020-01-01';
+
+-- Delete all rows (keeps table structure):
+DELETE FROM temp_data;
+
+-- TRUNCATE (faster, resets auto-increment — not in SQLite):
+-- TRUNCATE TABLE temp_data;</pre>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 CRITICAL: Always Use WHERE!</div>
+<p><code>UPDATE employees SET salary = 0;</code> — This updates EVERY employee's salary to 0! <br>
+<code>DELETE FROM employees;</code> — This deletes ALL employees! <br>
+<strong>Always test with SELECT first:</strong> <code>SELECT * FROM employees WHERE condition;</code></p>
+</div>
+
+<h3>DELETE vs TRUNCATE vs DROP</h3>
+<table class="cmp-table">
+<tr><th>Command</th><th>Removes</th><th>Rollback?</th><th>Speed</th><th>Triggers?</th></tr>
+<tr><td><code>DELETE</code></td><td>Specific rows</td><td>Yes</td><td>Slower (row by row)</td><td>Yes</td></tr>
+<tr><td><code>TRUNCATE</code></td><td>All rows</td><td>No (usually)</td><td>Very fast</td><td>No</td></tr>
+<tr><td><code>DROP</code></td><td>Entire table</td><td>No</td><td>Instant</td><td>No</td></tr>
+</table>
+</div>`,sql:`-- Safe UPDATE pattern: Test with SELECT first!
+
+-- Step 1: See what will be affected
+SELECT id, first_name, salary
+FROM employees 
+WHERE department_id = 1 AND salary < 70000;
+
+-- Step 2: UPDATE (uncomment to run)
+-- UPDATE employees SET salary = salary * 1.05
+-- WHERE department_id = 1 AND salary < 70000;
+
+-- Step 3: Verify the change
+-- SELECT id, first_name, salary
+-- FROM employees WHERE department_id = 1;`}
+]},
+
+{name:"Filtering (WHERE)",icon:"🔍",color:"#f59e0b",slides:[
+{title:"WHERE Clause Fundamentals",subtitle:"Filtering rows with conditions",content:`
+<div class="slide-body">
+<h3>🎯 Basic WHERE Syntax</h3>
+<pre>SELECT * FROM employees WHERE salary > 50000;
+SELECT * FROM employees WHERE department_id = 2;
+SELECT * FROM employees WHERE first_name = 'Alice';</pre>
+
+<h3>🔗 Logical Operators</h3>
+<pre>-- AND: Both conditions must be true
+SELECT * FROM employees WHERE salary > 50000 AND department_id = 1;
+
+-- OR: At least one condition must be true
+SELECT * FROM employees WHERE department_id = 1 OR department_id = 2;
+
+-- NOT: Negates a condition
+SELECT * FROM employees WHERE NOT is_active = 0;
+
+-- Combining (use parentheses for clarity!):
+SELECT * FROM employees 
+WHERE (department_id = 1 OR department_id = 2) 
+  AND salary > 60000;</pre>
+
+<h3>⚖️ Comparison Operators</h3>
+<table class="cmp-table">
+<tr><th>Operator</th><th>Meaning</th><th>Example</th></tr>
+<tr><td><code>=</code></td><td>Equal to</td><td><code>WHERE age = 25</code></td></tr>
+<tr><td><code>!= or <></code></td><td>Not equal to</td><td><code>WHERE status <> 'inactive'</code></td></tr>
+<tr><td><code>></code></td><td>Greater than</td><td><code>WHERE salary > 50000</code></td></tr>
+<tr><td><code>>=</code></td><td>Greater or equal</td><td><code>WHERE age >= 18</code></td></tr>
+<tr><td><code><</code></td><td>Less than</td><td><code>WHERE price < 100</code></td></tr>
+<tr><td><code><=</code></td><td>Less or equal</td><td><code>WHERE stock <= 10</code></td></tr>
+</table>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 Operator Precedence Trap</div>
+<p><code>WHERE a = 1 OR b = 2 AND c = 3</code> evaluates as <code>a = 1 OR (b = 2 AND c = 3)</code> because AND has higher precedence than OR. Always use parentheses to make your intent explicit!</p>
+</div>
+</div>`,sql:`-- WHERE filtering
+SELECT first_name, last_name, salary, department_id
+FROM employees
+WHERE salary > 50000 
+  AND department_id IN (1, 2, 3)
+ORDER BY salary DESC;`},
+
+{title:"LIKE, IN, BETWEEN",subtitle:"Pattern matching and range filtering",content:`
+<div class="slide-body">
+<h3>🔎 LIKE — Pattern Matching</h3>
+<pre>-- % matches zero or more characters:
+SELECT * FROM employees WHERE first_name LIKE 'A%';    -- Starts with A
+SELECT * FROM employees WHERE email LIKE '%@gmail.com'; -- Gmail emails
+SELECT * FROM employees WHERE last_name LIKE '%son%';   -- Contains 'son'
+
+-- _ matches exactly one character:
+SELECT * FROM employees WHERE first_name LIKE '_a%';    -- 2nd letter is 'a'
+SELECT * FROM products WHERE name LIKE '___';            -- Exactly 3 characters
+
+-- Case-insensitive (varies by database):
+-- PostgreSQL: ILIKE    SQLite: LIKE is case-insensitive by default for ASCII</pre>
+
+<h3>📋 IN — Set Membership</h3>
+<pre>-- Instead of multiple OR conditions:
+SELECT * FROM employees 
+WHERE department_id IN (1, 3, 5);
+
+-- Equivalent to:
+-- WHERE department_id = 1 OR department_id = 3 OR department_id = 5
+
+-- IN with subquery:
+SELECT * FROM employees
+WHERE department_id IN (
+    SELECT id FROM departments WHERE location = 'NYC'
+);
+
+-- NOT IN:
+SELECT * FROM employees WHERE department_id NOT IN (1, 2);</pre>
+
+<h3>📏 BETWEEN — Range Filtering</h3>
+<pre>-- BETWEEN is inclusive on both ends:
+SELECT * FROM employees WHERE salary BETWEEN 50000 AND 80000;
+-- Same as: WHERE salary >= 50000 AND salary <= 80000
+
+-- Works with dates:
+SELECT * FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-12-31';
+
+-- NOT BETWEEN:
+SELECT * FROM products WHERE price NOT BETWEEN 10 AND 50;</pre>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ LIKE Performance Warning</div>
+<p>Leading wildcard <code>LIKE '%keyword'</code> cannot use indexes — it requires a full table scan. Use <code>LIKE 'keyword%'</code> (prefix match) when possible for index usage. For full-text search, use dedicated features like PostgreSQL's <code>tsvector</code> or Elasticsearch.</p>
+</div>
+</div>`,sql:`-- LIKE, IN, BETWEEN demos
+-- Pattern matching:
+SELECT first_name, last_name, email
+FROM employees
+WHERE first_name LIKE 'A%'
+   OR last_name LIKE '%son';
+
+-- Try changing to:
+-- WHERE salary BETWEEN 50000 AND 75000
+-- WHERE department_id IN (1, 3)`},
+
+{title:"EXISTS, ANY, ALL",subtitle:"Advanced set comparisons and existence checks",content:`
+<div class="slide-body">
+<h3>🔍 EXISTS — Check if Rows Exist</h3>
+<pre>-- Returns TRUE if the subquery returns any rows:
+SELECT d.name
+FROM departments d
+WHERE EXISTS (
+    SELECT 1 FROM employees e 
+    WHERE e.department_id = d.id AND e.salary > 80000
+);
+-- "Find departments that have at least one high-earner"
+
+-- NOT EXISTS:
+SELECT d.name 
+FROM departments d
+WHERE NOT EXISTS (
+    SELECT 1 FROM employees e WHERE e.department_id = d.id
+);
+-- "Find departments with no employees"</pre>
+
+<h3>🔄 ANY / SOME — Compare Against Any Value</h3>
+<pre>-- salary > ANY(...) means salary > minimum of the set
+SELECT * FROM employees 
+WHERE salary > ANY (
+    SELECT salary FROM employees WHERE department_id = 1
+);
+-- "Employees earning more than the lowest in dept 1"</pre>
+
+<h3>🏔️ ALL — Compare Against All Values</h3>
+<pre>-- salary > ALL(...) means salary > maximum of the set
+SELECT * FROM employees
+WHERE salary > ALL (
+    SELECT salary FROM employees WHERE department_id = 2
+);
+-- "Employees earning more than everyone in dept 2"</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 EXISTS vs IN — Performance</div>
+<ul>
+<li><code>EXISTS</code> stops at the first match (short-circuits) — faster for large subqueries</li>
+<li><code>IN</code> evaluates the entire subquery first — better for small static lists</li>
+<li><code>EXISTS</code> handles NULLs correctly; <code>NOT IN</code> fails with NULLs in the subquery!</li>
+<li><strong>Rule</strong>: Prefer <code>EXISTS</code> for correlated subqueries, <code>IN</code> for simple value lists</li>
+</ul>
+</div>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 NOT IN Trap with NULLs</div>
+<p><code>WHERE x NOT IN (1, 2, NULL)</code> returns NO rows! Because <code>x != NULL</code> is always UNKNOWN, and UNKNOWN in AND chain makes the whole condition UNKNOWN. Use <code>NOT EXISTS</code> instead.</p>
+</div>
+</div>`,sql:`-- EXISTS example: Departments with employees earning > 70K
+SELECT d.id, d.name, d.location
+FROM departments d
+WHERE EXISTS (
+    SELECT 1 FROM employees e
+    WHERE e.department_id = d.id 
+      AND e.salary > 70000
+);
+
+-- Try NOT EXISTS to find departments with NO high earners:
+-- SELECT d.name FROM departments d
+-- WHERE NOT EXISTS (
+--     SELECT 1 FROM employees e
+--     WHERE e.department_id = d.id AND e.salary > 70000
+-- );`}
+]},
+
+{name:"Sorting & Pagination",icon:"📊",color:"#ec4899",slides:[
+{title:"ORDER BY, LIMIT, OFFSET",subtitle:"Sorting results and implementing pagination",content:`
+<div class="slide-body">
+<h3>🔄 ORDER BY — Sorting Results</h3>
+<pre>-- Ascending (default):
+SELECT * FROM employees ORDER BY salary ASC;
+
+-- Descending:
+SELECT * FROM employees ORDER BY salary DESC;
+
+-- Multiple columns (sort priority):
+SELECT * FROM employees ORDER BY department_id ASC, salary DESC;
+-- First sort by department, then by salary within each department
+
+-- Sort by expression:
+SELECT *, salary * 12 AS annual FROM employees ORDER BY annual DESC;
+
+-- Sort by column position (not recommended):
+SELECT first_name, salary FROM employees ORDER BY 2 DESC;</pre>
+
+<h3>📄 LIMIT & OFFSET — Pagination</h3>
+<pre>-- First 10 results:
+SELECT * FROM employees ORDER BY id LIMIT 10;
+
+-- Page 2 (skip first 10, get next 10):
+SELECT * FROM employees ORDER BY id LIMIT 10 OFFSET 10;
+
+-- Page N formula: LIMIT page_size OFFSET (page_number - 1) * page_size</pre>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ OFFSET Performance Problem</div>
+<ul>
+<li><code>OFFSET 1000000</code> still scans and discards 1 million rows — very slow!</li>
+<li><strong>Better alternative</strong>: Keyset pagination (cursor-based):</li>
+</ul>
+<pre>-- Instead of OFFSET, use the last seen value:
+SELECT * FROM employees 
+WHERE id > 1000  -- last_seen_id
+ORDER BY id 
+LIMIT 10;</pre>
+</div>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Sorting NULLs</div>
+<p>NULL sorting varies by database: PostgreSQL sorts NULLs last in ASC. You can control it:</p>
+<pre>ORDER BY column ASC NULLS FIRST
+ORDER BY column DESC NULLS LAST</pre>
+</div>
+</div>`,sql:`-- Sorting and pagination
+-- Top 5 highest-paid employees:
+SELECT first_name, last_name, salary, department_id
+FROM employees
+ORDER BY salary DESC
+LIMIT 5;
+
+-- Try pagination:
+-- Page 1: LIMIT 5 OFFSET 0
+-- Page 2: LIMIT 5 OFFSET 5
+-- Page 3: LIMIT 5 OFFSET 10`}
+]},
+
+{name:"Aggregate Functions",icon:"📈",color:"#ef4444",slides:[
+{title:"COUNT, SUM, AVG",subtitle:"Computing summary statistics from data",content:`
+<div class="slide-body">
+<h3>📊 Core Aggregates</h3>
+
+<h4>COUNT — Count rows</h4>
+<pre>COUNT(*)          -- Counts ALL rows (including NULLs)
+COUNT(column)     -- Counts non-NULL values in column
+COUNT(DISTINCT x) -- Counts unique non-NULL values</pre>
+
+<h4>SUM — Total of values</h4>
+<pre>SUM(salary)           -- Total salary expenditure
+SUM(DISTINCT salary)  -- Sum of unique salary values only</pre>
+
+<h4>AVG — Average value</h4>
+<pre>AVG(salary)           -- Average salary (ignores NULLs!)
+-- ⚠️ AVG with NULLs: if 3 employees have salaries 50K, 60K, NULL
+-- AVG = (50K + 60K) / 2 = 55K (not / 3!)</pre>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 NULL in Aggregates</div>
+<p>All aggregate functions <strong>except COUNT(*)</strong> ignore NULL values. This can cause unexpected results with AVG. Use <code>COALESCE</code> to treat NULLs as zero: <code>AVG(COALESCE(salary, 0))</code></p>
+</div>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Performance</div>
+<ul>
+<li><code>COUNT(*)</code> is usually optimized by the database engine (no column access needed)</li>
+<li><code>COUNT(column)</code> must check each value for NULL — slightly slower</li>
+<li>For large tables, consider maintaining a separate count table or using approximate counts</li>
+</ul>
+</div>
+</div>`,sql:`-- Aggregate functions in action
+SELECT 
+    COUNT(*) AS total_employees,
+    COUNT(DISTINCT department_id) AS num_departments,
+    ROUND(AVG(salary), 2) AS avg_salary,
+    SUM(salary) AS total_payroll,
+    MIN(salary) AS lowest_salary,
+    MAX(salary) AS highest_salary,
+    MAX(salary) - MIN(salary) AS salary_range,
+    ROUND(AVG(salary * 12), 0) AS avg_annual_salary
+FROM employees
+WHERE is_active = 1;`},
+
+{title:"MIN, MAX & Combined Aggregates",subtitle:"Finding extremes and combining multiple aggregates",content:`
+<div class="slide-body">
+<h3>🏔️ MIN & MAX</h3>
+<pre>-- Works with numbers, strings, and dates:
+SELECT MIN(salary), MAX(salary) FROM employees;
+SELECT MIN(hire_date), MAX(hire_date) FROM employees;  -- Earliest/latest hire
+SELECT MIN(first_name), MAX(first_name) FROM employees; -- Alphabetically first/last</pre>
+
+<h3>🔗 Combining Aggregates with CASE</h3>
+<pre>-- Conditional aggregation (pivot-like):
+SELECT 
+    COUNT(CASE WHEN salary > 80000 THEN 1 END) AS high_earners,
+    COUNT(CASE WHEN salary BETWEEN 50000 AND 80000 THEN 1 END) AS mid_earners,
+    COUNT(CASE WHEN salary < 50000 THEN 1 END) AS low_earners,
+    ROUND(AVG(CASE WHEN department_id = 1 THEN salary END), 2) AS dept1_avg,
+    ROUND(AVG(CASE WHEN department_id = 2 THEN salary END), 2) AS dept2_avg
+FROM employees;</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Getting the Row with MIN/MAX</div>
+<p>A common mistake: <code>SELECT name, MAX(salary) FROM employees</code> does NOT return the name of the highest-paid employee in most databases! Use:</p>
+<pre>-- Correct ways:
+-- 1. Subquery:
+SELECT * FROM employees WHERE salary = (SELECT MAX(salary) FROM employees);
+
+-- 2. ORDER BY + LIMIT:
+SELECT * FROM employees ORDER BY salary DESC LIMIT 1;
+
+-- 3. Window function:
+SELECT * FROM (
+    SELECT *, RANK() OVER (ORDER BY salary DESC) AS rnk FROM employees
+) t WHERE rnk = 1;</pre>
+</div>
+</div>`,sql:`-- Conditional aggregation — creating a summary report
+SELECT 
+    COUNT(*) AS total,
+    COUNT(CASE WHEN salary >= 80000 THEN 1 END) AS high_earners,
+    COUNT(CASE WHEN salary >= 50000 AND salary < 80000 THEN 1 END) AS mid_earners,
+    COUNT(CASE WHEN salary < 50000 THEN 1 END) AS low_earners,
+    MIN(salary) AS min_salary,
+    MAX(salary) AS max_salary,
+    ROUND(AVG(salary), 2) AS avg_salary
+FROM employees;`}
+]},
+
+{name:"GROUP BY & HAVING",icon:"📦",color:"#4f46e5",slides:[
+{title:"GROUP BY — Grouping Data",subtitle:"Aggregate data by categories",content:`
+<div class="slide-body">
+<h3>📦 GROUP BY Fundamentals</h3>
+<p>GROUP BY groups rows that have the same values in specified columns, then you can apply aggregate functions to each group.</p>
+
+<pre>-- Salary stats per department:
+SELECT department_id,
+       COUNT(*) AS emp_count,
+       ROUND(AVG(salary), 2) AS avg_salary,
+       SUM(salary) AS total_salary
+FROM employees
+GROUP BY department_id;
+
+-- Multiple grouping columns:
+SELECT department_id, is_active,
+       COUNT(*) AS count
+FROM employees
+GROUP BY department_id, is_active;</pre>
+
+<h3>⚠️ The Golden Rule of GROUP BY</h3>
+<p>Every column in SELECT must either be:</p>
+<ul>
+<li>Listed in the GROUP BY clause, OR</li>
+<li>Inside an aggregate function (COUNT, SUM, AVG, etc.)</li>
+</ul>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 Common Error</div>
+<pre>-- ❌ WRONG — which first_name to show for the group?
+SELECT first_name, department_id, AVG(salary) FROM employees GROUP BY department_id;
+
+-- ✅ CORRECT:
+SELECT department_id, AVG(salary) FROM employees GROUP BY department_id;</pre>
+<p>MySQL with <code>ONLY_FULL_GROUP_BY</code> off allows this (picking a random value), but it's undefined behavior. PostgreSQL and SQLite will throw an error.</p>
+</div>
+</div>`,sql:`-- GROUP BY examples
+-- Employee count and average salary per department:
+SELECT 
+    d.name AS department,
+    COUNT(e.id) AS employee_count,
+    ROUND(AVG(e.salary), 2) AS avg_salary,
+    MIN(e.salary) AS min_salary,
+    MAX(e.salary) AS max_salary
+FROM employees e
+JOIN departments d ON e.department_id = d.id
+GROUP BY d.name
+ORDER BY avg_salary DESC;`},
+
+{title:"HAVING — Filtering Groups",subtitle:"Apply conditions after grouping",content:`
+<div class="slide-body">
+<h3>🔍 WHERE vs HAVING</h3>
+<table class="cmp-table">
+<tr><th>Feature</th><th>WHERE</th><th>HAVING</th></tr>
+<tr><td><strong>Filters</strong></td><td>Individual rows</td><td>Groups (after GROUP BY)</td></tr>
+<tr><td><strong>Runs</strong></td><td>Before GROUP BY</td><td>After GROUP BY</td></tr>
+<tr><td><strong>Can use aggregates?</strong></td><td>❌ No</td><td>✅ Yes</td></tr>
+<tr><td><strong>Can filter columns?</strong></td><td>✅ Yes</td><td>Only grouped/aggregated</td></tr>
+</table>
+
+<pre>-- HAVING filters groups based on aggregate conditions:
+SELECT department_id, 
+       COUNT(*) AS emp_count,
+       AVG(salary) AS avg_sal
+FROM employees
+GROUP BY department_id
+HAVING COUNT(*) >= 3        -- Only departments with 3+ employees
+   AND AVG(salary) > 50000; -- And average salary > 50K
+
+-- Combined WHERE + HAVING:
+SELECT department_id, AVG(salary) AS avg_sal
+FROM employees
+WHERE is_active = 1          -- Filter rows first (active only)
+GROUP BY department_id       -- Then group
+HAVING AVG(salary) > 60000;  -- Then filter groups</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Execution Order Reminder</div>
+<pre>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT
+  ①       ②         ③         ④        ⑤        ⑥         ⑦</pre>
+<p>WHERE filters <strong>before</strong> grouping (reducing data early = better performance). HAVING filters <strong>after</strong> grouping. Always prefer WHERE when possible.</p>
+</div>
+</div>`,sql:`-- HAVING demo: Find departments with high average salaries
+SELECT 
+    d.name AS department,
+    COUNT(e.id) AS emp_count,
+    ROUND(AVG(e.salary), 2) AS avg_salary
+FROM employees e
+JOIN departments d ON e.department_id = d.id
+WHERE e.is_active = 1
+GROUP BY d.name
+HAVING COUNT(e.id) >= 2
+ORDER BY avg_salary DESC;`}
+]},
+
+{name:"NULL Handling",icon:"❓",color:"#7c3aed",slides:[
+{title:"Understanding NULL",subtitle:"The three-valued logic trap",content:`
+<div class="slide-body">
+<h3>❓ What is NULL?</h3>
+<p>NULL represents <strong>unknown</strong> or <strong>missing</strong> data — it is NOT zero, NOT empty string, NOT false. NULL is the absence of a value.</p>
+
+<h3>🧠 Three-Valued Logic</h3>
+<p>SQL uses three-valued logic: TRUE, FALSE, and <strong>UNKNOWN</strong>. Any comparison with NULL produces UNKNOWN.</p>
+
+<table class="cmp-table">
+<tr><th>Expression</th><th>Result</th><th>Why?</th></tr>
+<tr><td><code>NULL = NULL</code></td><td>UNKNOWN ❌</td><td>Two unknowns aren't necessarily equal</td></tr>
+<tr><td><code>NULL != NULL</code></td><td>UNKNOWN ❌</td><td>Can't determine inequality either</td></tr>
+<tr><td><code>NULL > 5</code></td><td>UNKNOWN ❌</td><td>Can't compare unknown to 5</td></tr>
+<tr><td><code>NULL + 10</code></td><td>NULL</td><td>Any math with NULL = NULL</td></tr>
+<tr><td><code>NULL AND TRUE</code></td><td>UNKNOWN</td><td>Result depends on the unknown</td></tr>
+<tr><td><code>NULL OR TRUE</code></td><td>TRUE ✅</td><td>TRUE regardless of the unknown</td></tr>
+<tr><td><code>NULL AND FALSE</code></td><td>FALSE ✅</td><td>FALSE regardless of the unknown</td></tr>
+</table>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 Critical: Always Use IS NULL, Never = NULL</div>
+<pre>-- ❌ WRONG — This returns NO rows even if NULLs exist!
+SELECT * FROM employees WHERE manager_id = NULL;
+
+-- ✅ CORRECT:
+SELECT * FROM employees WHERE manager_id IS NULL;
+SELECT * FROM employees WHERE manager_id IS NOT NULL;</pre>
+</div>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 NULL in Aggregates</div>
+<p>Aggregates (SUM, AVG, COUNT) skip NULL values. <code>COUNT(*)</code> counts all rows, but <code>COUNT(column)</code> only counts non-NULL values. This difference is subtle but crucial.</p>
+</div>
+</div>`,sql:`-- NULL behavior demonstration
+SELECT 
+    NULL = NULL AS eq_check,        -- NULL (unknown)
+    NULL IS NULL AS is_null_check,  -- 1 (TRUE!)
+    NULL + 100 AS math_with_null,   -- NULL
+    COALESCE(NULL, 'fallback') AS coalesce_demo,
+    IFNULL(NULL, 'default') AS ifnull_demo;`},
+
+{title:"COALESCE & NULLIF",subtitle:"Functions for handling NULL values gracefully",content:`
+<div class="slide-body">
+<h3>🛡️ COALESCE — First Non-NULL Value</h3>
+<pre>-- Returns the first non-NULL argument:
+COALESCE(NULL, NULL, 'hello', 'world')  -- Returns 'hello'
+COALESCE(NULL, NULL, NULL)               -- Returns NULL
+
+-- Common use cases:
+SELECT 
+    COALESCE(nickname, first_name) AS display_name,  -- Fallback chain
+    COALESCE(phone, email, 'No contact') AS contact,
+    COALESCE(bonus, 0) + salary AS total_pay          -- Treat NULL as 0
+FROM employees;</pre>
+
+<h3>🔄 NULLIF — Return NULL if Equal</h3>
+<pre>-- Returns NULL if both arguments are equal, otherwise returns first:
+NULLIF(10, 10)    -- Returns NULL
+NULLIF(10, 20)    -- Returns 10
+NULLIF('', '')    -- Returns NULL
+
+-- Key use case: Prevent division by zero!
+SELECT 
+    total_revenue / NULLIF(total_orders, 0) AS avg_order_value
+    -- If total_orders = 0, NULLIF returns NULL
+    -- x / NULL = NULL (no error!)
+FROM sales;</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 COALESCE vs IFNULL vs NVL</div>
+<ul>
+<li><code>COALESCE(a, b, c)</code> — SQL standard, takes multiple args, works everywhere</li>
+<li><code>IFNULL(a, b)</code> — MySQL/SQLite only, takes exactly 2 args</li>
+<li><code>NVL(a, b)</code> — Oracle only</li>
+<li><code>ISNULL(a, b)</code> — SQL Server only</li>
+<li><strong>Always prefer COALESCE</strong> for portability</li>
+</ul>
+</div>
+
+<div class="pros-cons">
+<div class="pros"><h4>✅ When to Allow NULLs</h4><ul>
+<li>Optional fields (middle name, phone)</li>
+<li>Unknown values (end_date for ongoing events)</li>
+<li>Self-referencing FKs (manager_id for CEO)</li>
+<li>Data not yet available</li>
+</ul></div>
+<div class="cons"><h4>❌ When to Avoid NULLs</h4><ul>
+<li>Primary keys (never!)</li>
+<li>Status fields (use 'unknown' instead)</li>
+<li>Boolean flags (use DEFAULT)</li>
+<li>Numeric fields used in calculations</li>
+</ul></div>
+</div>
+</div>`,sql:`-- COALESCE and NULLIF in practice
+SELECT 
+    first_name,
+    manager_id,
+    COALESCE(CAST(manager_id AS TEXT), '👑 No Manager (CEO?)') AS manager_display,
+    salary,
+    COALESCE(manager_id, 0) AS manager_safe,
+    -- Prevent division by zero with NULLIF:
+    ROUND(salary / NULLIF(COALESCE(manager_id, 0), 0), 2) AS salary_ratio
+FROM employees
+ORDER BY manager_id;`}
+]},
+
+{name:"Joins",icon:"🔗",color:"#06b6d4",slides:[
+{title:"Understanding Joins",subtitle:"Combining data from multiple tables",content:`
+<div class="slide-body">
+<h3>🔗 What are JOINs?</h3>
+<p>JOINs combine rows from two or more tables based on a related column. They are the heart of relational databases — the R in RDBMS.</p>
+
+<h3>📊 Types of Joins at a Glance</h3>
+<table class="cmp-table">
+<tr><th>Join Type</th><th>Returns</th><th>NULL rows?</th></tr>
+<tr><td><code>INNER JOIN</code></td><td>Only matching rows from both tables</td><td>No</td></tr>
+<tr><td><code>LEFT JOIN</code></td><td>All from left + matching from right</td><td>Right side can be NULL</td></tr>
+<tr><td><code>RIGHT JOIN</code></td><td>All from right + matching from left</td><td>Left side can be NULL</td></tr>
+<tr><td><code>FULL OUTER JOIN</code></td><td>All rows from both tables</td><td>Both sides can be NULL</td></tr>
+<tr><td><code>CROSS JOIN</code></td><td>Every combination (Cartesian product)</td><td>No</td></tr>
+<tr><td><code>SELF JOIN</code></td><td>Table joined with itself</td><td>Depends on join type</td></tr>
+</table>
+
+<h3>🔧 How JOINs Actually Work (Internally)</h3>
+<ol>
+<li><strong>Nested Loop Join</strong> — For each row in table A, scan table B for matches. O(n×m). Used for small tables or when index exists.</li>
+<li><strong>Hash Join</strong> — Build a hash table from smaller table, probe with larger table. O(n+m). Best for large unsorted tables.</li>
+<li><strong>Merge Join</strong> — Sort both tables, then merge. O(n log n + m log m). Best when data is already sorted or indexed.</li>
+</ol>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Join Performance Tips</div>
+<ul>
+<li>Always join on indexed columns (especially foreign keys)</li>
+<li>Filter with WHERE before joining when possible</li>
+<li>Start with the smallest table in complex multi-table joins</li>
+<li>Use EXPLAIN ANALYZE to see which join algorithm is used</li>
+</ul>
+</div>
+</div>`,sql:`-- Quick overview of our tables for joins:
+SELECT 'Employees: ' || COUNT(*) AS info FROM employees
+UNION ALL
+SELECT 'Departments: ' || COUNT(*) FROM departments
+UNION ALL
+SELECT 'Projects: ' || COUNT(*) FROM projects
+UNION ALL
+SELECT 'Employee-Projects: ' || COUNT(*) FROM employee_projects;`},
+
+{title:"INNER JOIN",subtitle:"Only matching rows from both tables",content:`
+<div class="slide-body">
+<h3>🎯 INNER JOIN</h3>
+<p>Returns only rows where the join condition is met in <strong>both</strong> tables. If an employee has no department, or a department has no employees, those rows are excluded.</p>
+
+<pre>-- Syntax:
+SELECT e.first_name, d.name AS department
+FROM employees e
+INNER JOIN departments d ON e.department_id = d.id;
+
+-- Multiple conditions:
+SELECT e.first_name, p.name AS project
+FROM employees e
+INNER JOIN employee_projects ep ON e.id = ep.employee_id
+INNER JOIN projects p ON ep.project_id = p.id;</pre>
+
+<h3>📊 Visual Representation</h3>
+<pre>  Table A        Table B
+  ┌─────┐        ┌─────┐
+  │     │╲      ╱│     │
+  │     │ ╲    ╱ │     │
+  │  A  │  ╲  ╱  │  B  │
+  │     │   ██   │     │   ██ = INNER JOIN result
+  │     │  ╱  ╲  │     │   (intersection only)
+  │     │ ╱    ╲ │     │
+  │     │╱      ╲│     │
+  └─────┘        └─────┘</pre>
+
+<div class="pros-cons">
+<div class="pros"><h4>✅ When to Use INNER JOIN</h4><ul>
+<li>You only want rows with matches in both tables</li>
+<li>Referential integrity is guaranteed (no orphans)</li>
+<li>Building reports where completeness is required</li>
+<li>Most common join type (~80% of queries)</li>
+</ul></div>
+<div class="cons"><h4>❌ When NOT to Use</h4><ul>
+<li>You need to see unmatched rows (use LEFT/FULL)</li>
+<li>Finding orphan records (use LEFT + WHERE NULL)</li>
+<li>Optional relationships where FK can be NULL</li>
+</ul></div>
+</div>
+</div>`,sql:`-- INNER JOIN: Employees with their department names
+SELECT 
+    e.first_name || ' ' || e.last_name AS employee,
+    d.name AS department,
+    d.location,
+    e.salary
+FROM employees e
+INNER JOIN departments d ON e.department_id = d.id
+ORDER BY d.name, e.salary DESC;`},
+
+{title:"LEFT & RIGHT JOIN",subtitle:"Include unmatched rows from one side",content:`
+<div class="slide-body">
+<h3>⬅️ LEFT JOIN (LEFT OUTER JOIN)</h3>
+<p>Returns ALL rows from the left table, and matched rows from the right. Unmatched right-side columns are NULL.</p>
+<pre>-- All employees, even those without a department:
+SELECT e.first_name, d.name AS dept
+FROM employees e
+LEFT JOIN departments d ON e.department_id = d.id;
+-- Employees without dept will show dept = NULL</pre>
+
+<h3>➡️ RIGHT JOIN (RIGHT OUTER JOIN)</h3>
+<p>Returns ALL rows from the right table, and matched rows from the left. Unmatched left-side columns are NULL.</p>
+<pre>-- All departments, even those with no employees:
+SELECT e.first_name, d.name AS dept
+FROM employees e
+RIGHT JOIN departments d ON e.department_id = d.id;
+-- Departments with no employees will show first_name = NULL</pre>
+
+<h3>🔍 Finding Unmatched Records (Anti-Join Pattern)</h3>
+<pre>-- Find employees without a department:
+SELECT e.first_name
+FROM employees e
+LEFT JOIN departments d ON e.department_id = d.id
+WHERE d.id IS NULL;
+
+-- Find departments with no employees:
+SELECT d.name
+FROM departments d
+LEFT JOIN employees e ON d.id = e.department_id
+WHERE e.id IS NULL;</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 LEFT JOIN = RIGHT JOIN (Reversed)</div>
+<p><code>A LEFT JOIN B</code> is identical to <code>B RIGHT JOIN A</code>. In practice, most developers only use LEFT JOIN and arrange tables in the desired order. RIGHT JOIN is rarely used and can be confusing.</p>
+</div>
+</div>`,sql:`-- LEFT JOIN: All departments and their employee counts
+-- (includes departments with 0 employees)
+SELECT 
+    d.name AS department,
+    d.location,
+    COUNT(e.id) AS employee_count,
+    COALESCE(ROUND(AVG(e.salary), 2), 0) AS avg_salary
+FROM departments d
+LEFT JOIN employees e ON d.id = e.department_id
+GROUP BY d.name, d.location
+ORDER BY employee_count DESC;`},
+
+{title:"FULL, CROSS & SELF JOIN",subtitle:"Complete outer joins, Cartesian products, and self-references",content:`
+<div class="slide-body">
+<h3>🔄 FULL OUTER JOIN</h3>
+<p>Returns ALL rows from BOTH tables. NULLs fill in where there's no match on either side.</p>
+<pre>SELECT e.first_name, d.name
+FROM employees e
+FULL OUTER JOIN departments d ON e.department_id = d.id;
+-- Shows: matched rows + unmatched employees + empty departments</pre>
+
+<h3>✖️ CROSS JOIN (Cartesian Product)</h3>
+<p>Combines EVERY row from table A with EVERY row from table B. If A has 10 rows and B has 5, result has 50 rows.</p>
+<pre>-- Generate all possible product-size combinations:
+SELECT p.name, s.label AS size
+FROM products p
+CROSS JOIN (SELECT 'S' AS label UNION SELECT 'M' UNION SELECT 'L') s;
+
+-- Useful for: calendars, reporting grids, test data generation</pre>
+
+<h3>🪞 SELF JOIN</h3>
+<p>A table joined with itself. Essential for hierarchical data (org charts, category trees).</p>
+<pre>-- Find each employee's manager:
+SELECT 
+    e.first_name AS employee,
+    m.first_name AS manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id;</pre>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ CROSS JOIN Warning</div>
+<p>CROSS JOIN can produce explosive results! Two tables with 1000 rows each produce 1,000,000 rows. Always use with small sets or add WHERE conditions to limit results.</p>
+</div>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Self Join Use Cases</div>
+<ul>
+<li><strong>Hierarchies</strong>: Employee → Manager, Category → Parent</li>
+<li><strong>Comparisons</strong>: Find employees in the same department</li>
+<li><strong>Sequences</strong>: Compare consecutive rows</li>
+<li><strong>Graph queries</strong>: Find friends-of-friends</li>
+</ul>
+</div>
+</div>`,sql:`-- SELF JOIN: Employee-Manager hierarchy
+SELECT 
+    e.first_name || ' ' || e.last_name AS employee,
+    e.salary AS emp_salary,
+    COALESCE(m.first_name || ' ' || m.last_name, '👑 CEO/Top Level') AS manager,
+    COALESCE(m.salary, 0) AS mgr_salary
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id
+ORDER BY m.id NULLS FIRST, e.salary DESC;`},
+
+{title:"Multi-Table Joins",subtitle:"Chaining multiple joins together",content:`
+<div class="slide-body">
+<h3>🔗 Chaining Joins</h3>
+<pre>-- Employee → Department → Projects (through junction table)
+SELECT 
+    e.first_name || ' ' || e.last_name AS employee,
+    d.name AS department,
+    p.name AS project,
+    ep.role,
+    ep.hours_worked
+FROM employees e
+JOIN departments d ON e.department_id = d.id
+JOIN employee_projects ep ON e.id = ep.employee_id
+JOIN projects p ON ep.project_id = p.id
+ORDER BY e.first_name, p.name;</pre>
+
+<h3>📐 Join Strategy for Complex Queries</h3>
+<ol>
+<li><strong>Identify your starting table</strong> (usually the main entity)</li>
+<li><strong>Add joins one at a time</strong> and verify results</li>
+<li><strong>Use LEFT JOIN</strong> when the relationship is optional</li>
+<li><strong>Apply filters early</strong> (in JOIN conditions or WHERE)</li>
+<li><strong>Use table aliases</strong> consistently for readability</li>
+</ol>
+
+<h3>⚡ JOIN Condition in ON vs WHERE</h3>
+<pre>-- For INNER JOIN, these are equivalent:
+FROM a JOIN b ON a.id = b.a_id AND b.status = 'active'
+FROM a JOIN b ON a.id = b.a_id WHERE b.status = 'active'
+
+-- For LEFT JOIN, they're DIFFERENT!
+-- ON: filters before joining (preserves left rows)
+-- WHERE: filters after joining (removes unmatched left rows)</pre>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 LEFT JOIN + WHERE Trap</div>
+<pre>-- ❌ This turns LEFT JOIN into INNER JOIN!
+FROM employees e LEFT JOIN departments d ON e.department_id = d.id
+WHERE d.location = 'NYC'   -- Filters out NULL departments!
+
+-- ✅ Correct: Put condition in ON clause
+FROM employees e LEFT JOIN departments d 
+  ON e.department_id = d.id AND d.location = 'NYC'</pre>
+</div>
+</div>`,sql:`-- Multi-table join: Complete employee report
+SELECT 
+    e.first_name || ' ' || e.last_name AS employee,
+    d.name AS department,
+    d.location AS dept_location,
+    COUNT(ep.project_id) AS num_projects,
+    COALESCE(SUM(ep.hours_worked), 0) AS total_hours,
+    e.salary
+FROM employees e
+LEFT JOIN departments d ON e.department_id = d.id
+LEFT JOIN employee_projects ep ON e.id = ep.employee_id
+GROUP BY e.id, e.first_name, e.last_name, d.name, d.location, e.salary
+ORDER BY num_projects DESC, e.salary DESC;`}
+]},
+
+{name:"Set Operations",icon:"⊕",color:"#10b981",slides:[
+{title:"UNION, INTERSECT, EXCEPT",subtitle:"Combining result sets from multiple queries",content:`
+<div class="slide-body">
+<h3>📊 Set Operations Overview</h3>
+<table class="cmp-table">
+<tr><th>Operation</th><th>Returns</th><th>Duplicates?</th></tr>
+<tr><td><code>UNION</code></td><td>All unique rows from both queries</td><td>Removed</td></tr>
+<tr><td><code>UNION ALL</code></td><td>All rows from both queries</td><td>Kept</td></tr>
+<tr><td><code>INTERSECT</code></td><td>Rows that appear in both queries</td><td>Removed</td></tr>
+<tr><td><code>EXCEPT</code></td><td>Rows in first query but not in second</td><td>Removed</td></tr>
+</table>
+
+<h3>📏 Rules</h3>
+<ul>
+<li>Both queries must have the <strong>same number of columns</strong></li>
+<li>Corresponding columns must have <strong>compatible data types</strong></li>
+<li>Column names come from the <strong>first query</strong></li>
+<li><code>ORDER BY</code> goes at the <strong>very end</strong> (applies to final result)</li>
+</ul>
+
+<pre>-- UNION: Combine two sets (removes duplicates)
+SELECT city FROM customers
+UNION
+SELECT location FROM departments;
+
+-- UNION ALL: Faster — keeps duplicates!
+SELECT first_name AS name, 'employee' AS type FROM employees
+UNION ALL
+SELECT name, 'customer' FROM customers;
+
+-- INTERSECT: Cities that are both customer cities AND dept locations
+SELECT city FROM customers
+INTERSECT
+SELECT location FROM departments;
+
+-- EXCEPT: Customer cities that are NOT department locations
+SELECT city FROM customers
+EXCEPT
+SELECT location FROM departments;</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 UNION vs UNION ALL Performance</div>
+<p><code>UNION</code> performs an implicit <code>DISTINCT</code> which requires sorting — it's slower. Use <code>UNION ALL</code> when you know there are no duplicates or duplicates are acceptable. UNION ALL is typically 2-3× faster.</p>
+</div>
+</div>`,sql:`-- Set operations: Create a combined contact list
+SELECT first_name || ' ' || last_name AS name, 
+       email, 
+       'Employee' AS type
+FROM employees
+WHERE email IS NOT NULL
+
+UNION ALL
+
+SELECT name, email, 'Customer' AS type
+FROM customers
+WHERE email IS NOT NULL
+
+ORDER BY type, name;`}
+]},
+
+{name:"Subqueries",icon:"🎯",color:"#f59e0b",slides:[
+{title:"Non-Correlated Subqueries",subtitle:"Independent inner queries",content:`
+<div class="slide-body">
+<h3>📦 What is a Subquery?</h3>
+<p>A subquery is a query nested inside another query. Non-correlated subqueries execute <strong>once</strong>, independently of the outer query.</p>
+
+<h3>📍 Subqueries in Different Clauses</h3>
+<pre>-- In WHERE (most common):
+SELECT * FROM employees 
+WHERE salary > (SELECT AVG(salary) FROM employees);
+
+-- In FROM (Derived Table):
+SELECT dept_name, avg_sal FROM (
+    SELECT d.name AS dept_name, AVG(e.salary) AS avg_sal
+    FROM departments d
+    JOIN employees e ON d.id = e.department_id
+    GROUP BY d.name
+) AS dept_stats
+WHERE avg_sal > 60000;
+
+-- In SELECT (Scalar subquery):
+SELECT first_name, salary,
+    salary - (SELECT AVG(salary) FROM employees) AS diff_from_avg
+FROM employees;
+
+-- In HAVING:
+SELECT department_id, AVG(salary) 
+FROM employees 
+GROUP BY department_id
+HAVING AVG(salary) > (SELECT AVG(salary) FROM employees);</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Subquery Return Types</div>
+<ul>
+<li><strong>Scalar</strong>: Returns a single value — use with =, >, < operators</li>
+<li><strong>Row</strong>: Returns a single row — use with row comparisons</li>
+<li><strong>Table</strong>: Returns multiple rows — use with IN, EXISTS, ANY, ALL</li>
+<li><strong>Derived Table</strong>: Used in FROM clause as a temporary table</li>
+</ul>
+</div>
+</div>`,sql:`-- Non-correlated subquery: Employees above average salary
+SELECT 
+    first_name || ' ' || last_name AS name,
+    salary,
+    ROUND(salary - (SELECT AVG(salary) FROM employees), 2) AS above_avg_by,
+    ROUND(salary / (SELECT AVG(salary) FROM employees) * 100, 1) || '%' AS pct_of_avg
+FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees)
+ORDER BY salary DESC;`},
+
+{title:"Correlated Subqueries",subtitle:"Dependent inner queries that reference the outer query",content:`
+<div class="slide-body">
+<h3>🔄 Correlated vs Non-Correlated</h3>
+<table class="cmp-table">
+<tr><th>Feature</th><th>Non-Correlated</th><th>Correlated</th></tr>
+<tr><td><strong>Depends on outer?</strong></td><td>No — runs independently</td><td>Yes — references outer query</td></tr>
+<tr><td><strong>Execution</strong></td><td>Runs once</td><td>Runs once per outer row</td></tr>
+<tr><td><strong>Performance</strong></td><td>Generally faster</td><td>Can be slow (N executions)</td></tr>
+<tr><td><strong>Use case</strong></td><td>Compare to a single value</td><td>Row-by-row comparisons</td></tr>
+</table>
+
+<pre>-- Correlated: Each employee vs their department average
+SELECT e.first_name, e.salary, e.department_id,
+    (SELECT AVG(e2.salary) 
+     FROM employees e2 
+     WHERE e2.department_id = e.department_id) AS dept_avg
+FROM employees e;
+-- The inner query runs for EACH row, using e.department_id
+
+-- Employees earning more than their department average:
+SELECT first_name, salary, department_id
+FROM employees e
+WHERE salary > (
+    SELECT AVG(salary) FROM employees e2
+    WHERE e2.department_id = e.department_id
+);</pre>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ Performance Warning</div>
+<p>Correlated subqueries execute once per outer row. For 10,000 employees, the inner query runs 10,000 times! Often a JOIN or window function achieves the same result more efficiently.</p>
+</div>
+
+<pre>-- Equivalent using JOIN (usually faster):
+SELECT e.first_name, e.salary, e.department_id, da.avg_sal
+FROM employees e
+JOIN (
+    SELECT department_id, AVG(salary) AS avg_sal
+    FROM employees GROUP BY department_id
+) da ON e.department_id = da.department_id
+WHERE e.salary > da.avg_sal;</pre>
+</div>`,sql:`-- Correlated subquery: Employees earning above their dept average
+SELECT 
+    e.first_name || ' ' || e.last_name AS name,
+    e.department_id,
+    e.salary,
+    (SELECT ROUND(AVG(e2.salary), 2) 
+     FROM employees e2 
+     WHERE e2.department_id = e.department_id) AS dept_avg,
+    ROUND(e.salary - (SELECT AVG(e2.salary) 
+     FROM employees e2 
+     WHERE e2.department_id = e.department_id), 2) AS diff
+FROM employees e
+WHERE e.salary > (
+    SELECT AVG(e2.salary) FROM employees e2 
+    WHERE e2.department_id = e.department_id
+)
+ORDER BY diff DESC;`}
+]},
+
+{name:"CTEs",icon:"🏗️",color:"#ec4899",slides:[
+{title:"Common Table Expressions (WITH)",subtitle:"Named temporary result sets for cleaner queries",content:`
+<div class="slide-body">
+<h3>📋 CTE Syntax</h3>
+<pre>WITH cte_name AS (
+    SELECT ...  -- Define a temporary named result set
+)
+SELECT * FROM cte_name;  -- Use it like a table
+
+-- Multiple CTEs:
+WITH 
+    dept_stats AS (
+        SELECT department_id, AVG(salary) AS avg_sal, COUNT(*) AS cnt
+        FROM employees GROUP BY department_id
+    ),
+    high_paying_depts AS (
+        SELECT * FROM dept_stats WHERE avg_sal > 60000
+    )
+SELECT d.name, h.avg_sal, h.cnt
+FROM high_paying_depts h
+JOIN departments d ON h.department_id = d.id;</pre>
+
+<h3>CTE vs Subquery vs Temp Table</h3>
+<table class="cmp-table">
+<tr><th>Feature</th><th>CTE</th><th>Subquery</th><th>Temp Table</th></tr>
+<tr><td>Readability</td><td>⭐⭐⭐ Excellent</td><td>⭐ Nested mess</td><td>⭐⭐ Good</td></tr>
+<tr><td>Reusability</td><td>Within the query</td><td>Cannot reuse</td><td>Across queries</td></tr>
+<tr><td>Performance</td><td>Same as subquery</td><td>Same as CTE</td><td>Materialized on disk</td></tr>
+<tr><td>Recursion</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td></tr>
+<tr><td>Scope</td><td>Single statement</td><td>Single location</td><td>Session/connection</td></tr>
+</table>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 When to Use CTEs</div>
+<ul>
+<li>Breaking complex queries into readable named steps</li>
+<li>Reusing the same subquery result multiple times</li>
+<li>Recursive queries (hierarchies, graph traversal)</li>
+<li>Self-documenting code — CTE names describe what each part does</li>
+</ul>
+</div>
+</div>`,sql:`-- CTE: Step-by-step analysis
+WITH dept_stats AS (
+    SELECT 
+        d.name AS department,
+        COUNT(e.id) AS emp_count,
+        ROUND(AVG(e.salary), 2) AS avg_salary,
+        SUM(e.salary) AS total_payroll
+    FROM departments d
+    LEFT JOIN employees e ON d.id = e.department_id
+    GROUP BY d.name
+),
+company_avg AS (
+    SELECT ROUND(AVG(salary), 2) AS overall_avg FROM employees
+)
+SELECT 
+    ds.department,
+    ds.emp_count,
+    ds.avg_salary,
+    ca.overall_avg,
+    CASE WHEN ds.avg_salary > ca.overall_avg THEN '📈 Above' ELSE '📉 Below' END AS vs_company
+FROM dept_stats ds, company_avg ca
+ORDER BY ds.avg_salary DESC;`},
+
+{title:"Recursive CTEs",subtitle:"Traversing hierarchies and generating series",content:`
+<div class="slide-body">
+<h3>🔄 Recursive CTE Structure</h3>
+<pre>WITH RECURSIVE cte_name AS (
+    -- Base case (anchor member):
+    SELECT ... WHERE condition
+    
+    UNION ALL
+    
+    -- Recursive case (references itself):
+    SELECT ... FROM cte_name WHERE stop_condition
+)
+SELECT * FROM cte_name;</pre>
+
+<h3>📊 Use Cases</h3>
+<h4>1. Org Chart / Employee Hierarchy</h4>
+<pre>WITH RECURSIVE org_tree AS (
+    -- Start from the CEO (no manager):
+    SELECT id, first_name, manager_id, 0 AS level
+    FROM employees WHERE manager_id IS NULL
+    
+    UNION ALL
+    
+    -- Find direct reports:
+    SELECT e.id, e.first_name, e.manager_id, ot.level + 1
+    FROM employees e
+    JOIN org_tree ot ON e.manager_id = ot.id
+)
+SELECT * FROM org_tree ORDER BY level, first_name;</pre>
+
+<h4>2. Generate Number Series</h4>
+<pre>WITH RECURSIVE nums AS (
+    SELECT 1 AS n
+    UNION ALL
+    SELECT n + 1 FROM nums WHERE n < 100
+)
+SELECT n FROM nums;</pre>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 Infinite Recursion Guard</div>
+<p>Always include a termination condition! Without <code>WHERE n < 100</code>, the recursion runs forever. Most databases have a default recursion limit (e.g., SQLite: 1000 iterations). Set it with <code>PRAGMA recursive_triggers = ON;</code></p>
+</div>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Real-World Uses</div>
+<ul>
+<li><strong>Org charts</strong>: Employee → Manager hierarchy</li>
+<li><strong>Category trees</strong>: Category → Subcategory nesting</li>
+<li><strong>Bill of Materials</strong>: Part → Sub-parts breakdown</li>
+<li><strong>Date/Number series</strong>: Generate calendar tables</li>
+<li><strong>Graph traversal</strong>: Find shortest paths</li>
+</ul>
+</div>
+</div>`,sql:`-- Recursive CTE: Generate a date series for the last 7 days
+WITH RECURSIVE dates AS (
+    SELECT DATE('now', '-6 days') AS day
+    UNION ALL
+    SELECT DATE(day, '+1 day') FROM dates
+    WHERE day < DATE('now')
+)
+SELECT 
+    day,
+    CASE CAST(STRFTIME('%w', day) AS INT)
+        WHEN 0 THEN '🟢 Sunday'
+        WHEN 1 THEN 'Monday' WHEN 2 THEN 'Tuesday'
+        WHEN 3 THEN 'Wednesday' WHEN 4 THEN 'Thursday'
+        WHEN 5 THEN 'Friday' WHEN 6 THEN '🟢 Saturday'
+    END AS day_name
+FROM dates;`}
+]},
+
+{name:"Window Functions",icon:"🪟",color:"#ef4444",slides:[
+{title:"Window Functions Introduction",subtitle:"Calculations across rows without collapsing groups",content:`
+<div class="slide-body">
+<h3>🪟 What are Window Functions?</h3>
+<p>Window functions perform calculations across a set of rows <strong>related to the current row</strong>, WITHOUT grouping rows together. Unlike GROUP BY, they keep all individual rows in the result.</p>
+
+<pre>-- Syntax:
+function_name(...) OVER (
+    [PARTITION BY column]    -- Define groups (like GROUP BY but keeps rows)
+    [ORDER BY column]        -- Define order within partition
+    [frame_clause]           -- Define which rows to include
+)</pre>
+
+<h3>GROUP BY vs Window Functions</h3>
+<table class="cmp-table">
+<tr><th>Feature</th><th>GROUP BY</th><th>Window Functions</th></tr>
+<tr><td>Output rows</td><td>One row per group</td><td>All original rows</td></tr>
+<tr><td>Individual data</td><td>Lost (aggregated)</td><td>Preserved</td></tr>
+<tr><td>Ranking</td><td>Not possible</td><td>ROW_NUMBER, RANK</td></tr>
+<tr><td>Running totals</td><td>Not possible</td><td>SUM() OVER (ORDER BY)</td></tr>
+<tr><td>Previous/Next row</td><td>Not possible</td><td>LAG, LEAD</td></tr>
+</table>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 When to Use Window Functions</div>
+<ul>
+<li>Ranking within groups (top 3 per department)</li>
+<li>Running totals / moving averages</li>
+<li>Comparing each row to group aggregate</li>
+<li>Accessing previous/next row values</li>
+<li>Percentile / distribution calculations</li>
+</ul>
+</div>
+</div>`,sql:`-- Window function vs GROUP BY comparison:
+-- Each employee with their department's average (without losing detail)
+SELECT 
+    first_name,
+    department_id,
+    salary,
+    ROUND(AVG(salary) OVER (PARTITION BY department_id), 2) AS dept_avg,
+    salary - ROUND(AVG(salary) OVER (PARTITION BY department_id), 2) AS diff_from_dept_avg,
+    COUNT(*) OVER (PARTITION BY department_id) AS dept_size
+FROM employees
+ORDER BY department_id, salary DESC;`},
+
+{title:"ROW_NUMBER, RANK, DENSE_RANK",subtitle:"Ranking functions for ordering and deduplication",content:`
+<div class="slide-body">
+<h3>🏆 Ranking Functions Compared</h3>
+<pre>Salary: 100K  90K  90K  80K  70K  70K  70K  60K
+
+ROW_NUMBER:  1    2    3    4    5    6    7    8   (always unique)
+RANK:        1    2    2    4    5    5    5    8   (gaps after ties)
+DENSE_RANK:  1    2    2    3    4    4    4    5   (no gaps)</pre>
+
+<table class="cmp-table">
+<tr><th>Function</th><th>Ties?</th><th>Gaps?</th><th>Best For</th></tr>
+<tr><td><code>ROW_NUMBER()</code></td><td>No ties (arbitrary)</td><td>Never</td><td>Pagination, deduplication</td></tr>
+<tr><td><code>RANK()</code></td><td>Same rank for ties</td><td>Yes, after ties</td><td>Competition ranking</td></tr>
+<tr><td><code>DENSE_RANK()</code></td><td>Same rank for ties</td><td>Never</td><td>Dense ranking, top-N</td></tr>
+</table>
+
+<h3>🎯 Top-N Per Group Pattern</h3>
+<pre>-- Get top 2 earners per department:
+SELECT * FROM (
+    SELECT first_name, department_id, salary,
+           ROW_NUMBER() OVER (
+               PARTITION BY department_id 
+               ORDER BY salary DESC
+           ) AS rn
+    FROM employees
+) ranked
+WHERE rn <= 2;</pre>
+
+<h3>🧹 Deduplication Pattern</h3>
+<pre>-- Keep only the latest order per customer:
+SELECT * FROM (
+    SELECT *, ROW_NUMBER() OVER (
+        PARTITION BY customer_id ORDER BY order_date DESC
+    ) AS rn
+    FROM orders
+) t WHERE rn = 1;</pre>
+</div>`,sql:`-- Ranking functions comparison
+SELECT 
+    first_name || ' ' || last_name AS name,
+    department_id AS dept,
+    salary,
+    ROW_NUMBER() OVER (ORDER BY salary DESC) AS row_num,
+    RANK() OVER (ORDER BY salary DESC) AS rank,
+    DENSE_RANK() OVER (ORDER BY salary DESC) AS dense_rank,
+    ROW_NUMBER() OVER (
+        PARTITION BY department_id ORDER BY salary DESC
+    ) AS dept_rank
+FROM employees
+ORDER BY salary DESC;`},
+
+{title:"LAG, LEAD, FIRST_VALUE, LAST_VALUE",subtitle:"Accessing other rows relative to the current row",content:`
+<div class="slide-body">
+<h3>⬅️ LAG — Previous Row Value</h3>
+<pre>LAG(column, offset, default) OVER (ORDER BY ...)
+-- offset: how many rows back (default: 1)
+-- default: value if no previous row exists</pre>
+
+<h3>➡️ LEAD — Next Row Value</h3>
+<pre>LEAD(column, offset, default) OVER (ORDER BY ...)
+-- Same as LAG but looks forward</pre>
+
+<h3>🔝 FIRST_VALUE / LAST_VALUE</h3>
+<pre>FIRST_VALUE(column) OVER (PARTITION BY ... ORDER BY ...)
+-- Returns the first value in the window frame
+
+LAST_VALUE(column) OVER (
+    PARTITION BY ... ORDER BY ...
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)
+-- ⚠️ Must specify frame! Default frame doesn't include future rows</pre>
+
+<h3>📈 Practical Examples</h3>
+<pre>-- Month-over-month growth:
+SELECT month, revenue,
+    revenue - LAG(revenue) OVER (ORDER BY month) AS growth,
+    ROUND((revenue - LAG(revenue) OVER (ORDER BY month)) 
+          / LAG(revenue) OVER (ORDER BY month) * 100, 1) AS growth_pct
+FROM monthly_sales;
+
+-- Gap analysis:
+SELECT hire_date,
+    JULIANDAY(hire_date) - JULIANDAY(LAG(hire_date) OVER (ORDER BY hire_date)) 
+    AS days_since_last_hire
+FROM employees;</pre>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 LAST_VALUE Default Frame Trap</div>
+<p>The default window frame is <code>ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>. This means <code>LAST_VALUE()</code> just returns the current row's value! Always specify the full frame for LAST_VALUE.</p>
+</div>
+</div>`,sql:`-- LAG and LEAD: Compare employees to neighbors
+SELECT 
+    first_name,
+    salary,
+    LAG(salary, 1, 0) OVER (ORDER BY salary DESC) AS prev_higher_salary,
+    LEAD(salary, 1, 0) OVER (ORDER BY salary DESC) AS next_lower_salary,
+    salary - LEAD(salary, 1, salary) OVER (ORDER BY salary DESC) AS gap_to_next,
+    FIRST_VALUE(first_name) OVER (ORDER BY salary DESC) AS highest_earner,
+    FIRST_VALUE(salary) OVER (ORDER BY salary DESC) AS top_salary
+FROM employees
+ORDER BY salary DESC;`},
+
+{title:"Window Frames & Running Totals",subtitle:"Controlling which rows the window function sees",content:`
+<div class="slide-body">
+<h3>📐 Window Frame Syntax</h3>
+<pre>OVER (
+    ORDER BY column
+    ROWS BETWEEN start AND end    -- Physical rows
+    -- or
+    RANGE BETWEEN start AND end   -- Logical range
+)
+
+-- Frame boundaries:
+UNBOUNDED PRECEDING    -- First row of partition
+N PRECEDING            -- N rows before current
+CURRENT ROW            -- Current row
+N FOLLOWING            -- N rows after current
+UNBOUNDED FOLLOWING    -- Last row of partition</pre>
+
+<h3>📊 Common Patterns</h3>
+<pre>-- Running total (cumulative sum):
+SUM(amount) OVER (ORDER BY date ROWS UNBOUNDED PRECEDING)
+
+-- Moving average (last 3 rows):
+AVG(price) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)
+
+-- Moving average (3-day window centered):
+AVG(price) OVER (ORDER BY date ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)
+
+-- Percentage of total:
+salary / SUM(salary) OVER () * 100 AS pct_of_total</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 ROWS vs RANGE</div>
+<ul>
+<li><code>ROWS</code>: Counts physical rows — predictable, fast</li>
+<li><code>RANGE</code>: Groups rows with the same ORDER BY value — handles ties but slower</li>
+<li><strong>Use ROWS</strong> unless you specifically need tie-handling behavior</li>
+</ul>
+</div>
+</div>`,sql:`-- Running total and moving average of salaries
+SELECT 
+    first_name,
+    salary,
+    SUM(salary) OVER (ORDER BY salary DESC 
+        ROWS UNBOUNDED PRECEDING) AS running_total,
+    ROUND(AVG(salary) OVER (ORDER BY salary DESC 
+        ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) AS moving_avg_3,
+    ROUND(salary * 100.0 / SUM(salary) OVER (), 1) AS pct_of_total,
+    ROUND(SUM(salary) OVER (ORDER BY salary DESC 
+        ROWS UNBOUNDED PRECEDING) * 100.0 / SUM(salary) OVER (), 1) AS cumulative_pct
+FROM employees
+ORDER BY salary DESC;`}
+]},
+
+{name:"CASE Expression",icon:"🔀",color:"#4f46e5",slides:[
+{title:"CASE — Conditional Logic in SQL",subtitle:"IF-THEN-ELSE for your queries",content:`
+<div class="slide-body">
+<h3>🔀 Two Forms of CASE</h3>
+
+<h4>Simple CASE (equality comparison):</h4>
+<pre>CASE department_id
+    WHEN 1 THEN 'Engineering'
+    WHEN 2 THEN 'Marketing'
+    WHEN 3 THEN 'Sales'
+    ELSE 'Other'
+END</pre>
+
+<h4>Searched CASE (any condition):</h4>
+<pre>CASE 
+    WHEN salary >= 100000 THEN 'Executive'
+    WHEN salary >= 70000 THEN 'Senior'
+    WHEN salary >= 40000 THEN 'Mid-Level'
+    ELSE 'Junior'
+END</pre>
+
+<h3>📍 CASE in Different Contexts</h3>
+<pre>-- In SELECT (computed column):
+SELECT name, CASE WHEN price > 100 THEN 'Premium' ELSE 'Standard' END AS tier;
+
+-- In WHERE:
+SELECT * FROM employees WHERE 
+    CASE WHEN department_id IS NULL THEN 'unassigned' ELSE 'assigned' END = 'unassigned';
+
+-- In ORDER BY (custom sort order):
+SELECT * FROM orders ORDER BY 
+    CASE status WHEN 'urgent' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END;
+
+-- In UPDATE:
+UPDATE employees SET salary = CASE 
+    WHEN department_id = 1 THEN salary * 1.15
+    WHEN department_id = 2 THEN salary * 1.10
+    ELSE salary * 1.05
+END;
+
+-- In aggregate (conditional counting):
+SELECT 
+    COUNT(CASE WHEN status = 'active' THEN 1 END) AS active_count,
+    COUNT(CASE WHEN status = 'inactive' THEN 1 END) AS inactive_count
+FROM users;</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 CASE Evaluates Top-Down</div>
+<p>CASE returns the first matching condition and stops. Order matters! Put more specific conditions before general ones.</p>
+</div>
+</div>`,sql:`-- CASE expression examples
+SELECT 
+    first_name || ' ' || last_name AS name,
+    salary,
+    CASE 
+        WHEN salary >= 90000 THEN '🔴 Executive'
+        WHEN salary >= 70000 THEN '🟠 Senior'
+        WHEN salary >= 50000 THEN '🟡 Mid-Level'
+        ELSE '🟢 Junior'
+    END AS level,
+    CASE 
+        WHEN salary >= (SELECT AVG(salary) FROM employees) THEN '↑ Above Avg'
+        ELSE '↓ Below Avg'
+    END AS vs_average,
+    department_id
+FROM employees
+ORDER BY salary DESC;`}
+]},
+
+{name:"Views",icon:"👁️",color:"#7c3aed",slides:[
+{title:"Views & Materialized Views",subtitle:"Virtual tables and cached query results",content:`
+<div class="slide-body">
+<h3>👁️ Regular View — A Saved Query</h3>
+<pre>CREATE VIEW employee_summary AS
+SELECT 
+    e.id, e.first_name || ' ' || e.last_name AS name,
+    d.name AS department, e.salary
+FROM employees e
+JOIN departments d ON e.department_id = d.id;
+
+-- Use it like a table:
+SELECT * FROM employee_summary WHERE salary > 70000;
+
+-- Drop it:
+DROP VIEW employee_summary;</pre>
+
+<h3>📦 Materialized View — Cached Results</h3>
+<pre>-- PostgreSQL syntax (not available in SQLite):
+CREATE MATERIALIZED VIEW monthly_revenue AS
+SELECT DATE_TRUNC('month', order_date) AS month,
+       SUM(total_price) AS revenue
+FROM orders GROUP BY 1;
+
+-- Must manually refresh:
+REFRESH MATERIALIZED VIEW monthly_revenue;
+REFRESH MATERIALIZED VIEW CONCURRENTLY monthly_revenue; -- No lock</pre>
+
+<table class="cmp-table">
+<tr><th>Feature</th><th>Regular View</th><th>Materialized View</th></tr>
+<tr><td>Storage</td><td>No data stored (just SQL)</td><td>Results stored on disk</td></tr>
+<tr><td>Speed</td><td>Re-executes query each time</td><td>Reads cached results</td></tr>
+<tr><td>Freshness</td><td>Always current</td><td>Stale until refreshed</td></tr>
+<tr><td>Write?</td><td>Sometimes (simple views)</td><td>No (read-only)</td></tr>
+<tr><td>Use case</td><td>Abstraction, security</td><td>Performance, dashboards</td></tr>
+</table>
+
+<div class="pros-cons">
+<div class="pros"><h4>✅ View Advantages</h4><ul>
+<li>Simplify complex queries</li>
+<li>Security: expose only certain columns</li>
+<li>Abstraction: hide table structure changes</li>
+<li>Reusability across applications</li>
+</ul></div>
+<div class="cons"><h4>❌ View Disadvantages</h4><ul>
+<li>Performance: no inherent optimization</li>
+<li>Complexity: nested views are hard to debug</li>
+<li>Updatability: most views are read-only</li>
+<li>Dependencies: dropping base tables breaks views</li>
+</ul></div>
+</div>
+</div>`,sql:`-- Create and use a view
+CREATE VIEW IF NOT EXISTS emp_department_view AS
+SELECT 
+    e.id,
+    e.first_name || ' ' || e.last_name AS full_name,
+    d.name AS department,
+    d.location,
+    e.salary,
+    e.hire_date
+FROM employees e
+LEFT JOIN departments d ON e.department_id = d.id;
+
+-- Query the view like a regular table:
+SELECT department, 
+       COUNT(*) AS count, 
+       ROUND(AVG(salary), 2) AS avg_salary
+FROM emp_department_view
+GROUP BY department
+ORDER BY avg_salary DESC;`}
+]},
+
+{name:"Indexes",icon:"⚡",color:"#06b6d4",slides:[
+{title:"Indexes — Speeding Up Queries",subtitle:"The #1 performance optimization technique",content:`
+<div class="slide-body">
+<h3>⚡ What is an Index?</h3>
+<p>An index is a data structure (usually B-tree) that speeds up data retrieval. Like a book's index — instead of reading every page, jump directly to the right one.</p>
+
+<pre>-- Create an index:
+CREATE INDEX idx_employees_dept ON employees(department_id);
+CREATE INDEX idx_employees_salary ON employees(salary);
+
+-- Composite index (multi-column):
+CREATE INDEX idx_emp_dept_salary ON employees(department_id, salary);
+
+-- Unique index:
+CREATE UNIQUE INDEX idx_emp_email ON employees(email);
+
+-- Drop an index:
+DROP INDEX idx_employees_dept;</pre>
+
+<h3>📊 Without Index vs With Index</h3>
+<pre>-- Without index: Full Table Scan → O(n)
+-- Reads every row to find matches
+SELECT * FROM employees WHERE department_id = 3;
+-- 1,000,000 rows → checks all 1,000,000
+
+-- With index on department_id: Index Seek → O(log n)
+-- B-tree lookup, then fetch matching rows
+SELECT * FROM employees WHERE department_id = 3;
+-- 1,000,000 rows → checks ~20 index levels → fetches ~100 matching rows</pre>
+
+<h3>🌳 Types of Indexes</h3>
+<table class="cmp-table">
+<tr><th>Type</th><th>Structure</th><th>Best For</th></tr>
+<tr><td><strong>B-tree</strong> (default)</td><td>Balanced tree</td><td>Equality, range queries, sorting</td></tr>
+<tr><td><strong>Hash</strong></td><td>Hash table</td><td>Exact equality only (=)</td></tr>
+<tr><td><strong>GIN</strong></td><td>Generalized Inverted</td><td>Full-text search, arrays, JSONB</td></tr>
+<tr><td><strong>GiST</strong></td><td>Generalized Search Tree</td><td>Geometric data, ranges</td></tr>
+<tr><td><strong>BRIN</strong></td><td>Block Range</td><td>Large sorted tables (timestamps)</td></tr>
+</table>
+
+<div class="pros-cons">
+<div class="pros"><h4>✅ When to Index</h4><ul>
+<li>Columns in WHERE clauses</li>
+<li>Foreign key columns (JOIN conditions)</li>
+<li>Columns in ORDER BY</li>
+<li>Columns with high selectivity</li>
+</ul></div>
+<div class="cons"><h4>❌ When NOT to Index</h4><ul>
+<li>Small tables (< 1000 rows)</li>
+<li>Columns with low cardinality</li>
+<li>Tables with heavy INSERT/UPDATE</li>
+<li>Rarely queried columns</li>
+</ul></div>
+</div>
+</div>`,sql:`-- Index demonstration in SQLite
+-- Create indexes:
+CREATE INDEX IF NOT EXISTS idx_emp_dept ON employees(department_id);
+CREATE INDEX IF NOT EXISTS idx_emp_salary ON employees(salary);
+
+-- See all indexes:
+SELECT name, tbl_name 
+FROM sqlite_master 
+WHERE type = 'index'
+ORDER BY tbl_name;
+
+-- Query plan (shows if index is used):
+-- EXPLAIN QUERY PLAN SELECT * FROM employees WHERE department_id = 1;`}
+]},
+
+{name:"Transactions & ACID",icon:"🔐",color:"#10b981",slides:[
+{title:"ACID Properties & Transactions",subtitle:"Guaranteeing data integrity",content:`
+<div class="slide-body">
+<h3>🔐 ACID Properties</h3>
+<table class="cmp-table">
+<tr><th>Property</th><th>Meaning</th><th>Example</th></tr>
+<tr><td><strong>A</strong>tomicity</td><td>All or nothing — entire transaction succeeds or fails</td><td>Bank transfer: debit AND credit both happen or neither does</td></tr>
+<tr><td><strong>C</strong>onsistency</td><td>Database moves from one valid state to another</td><td>Constraints are satisfied after every transaction</td></tr>
+<tr><td><strong>I</strong>solation</td><td>Concurrent transactions don't interfere</td><td>Two users updating the same row don't corrupt data</td></tr>
+<tr><td><strong>D</strong>urability</td><td>Committed data survives system crashes</td><td>After COMMIT, data is written to disk</td></tr>
+</table>
+
+<h3>💳 Transaction Commands</h3>
+<pre>BEGIN TRANSACTION;    -- Start transaction
+    UPDATE accounts SET balance = balance - 500 WHERE id = 1;
+    UPDATE accounts SET balance = balance + 500 WHERE id = 2;
+COMMIT;               -- Save all changes
+
+-- If something goes wrong:
+BEGIN TRANSACTION;
+    UPDATE accounts SET balance = balance - 500 WHERE id = 1;
+    -- Oops! Error occurred
+ROLLBACK;             -- Undo all changes since BEGIN
+
+-- SAVEPOINT (partial rollback):
+BEGIN;
+    INSERT INTO orders (...) VALUES (...);
+    SAVEPOINT sp1;
+    INSERT INTO order_items (...) VALUES (...);  -- Fails
+    ROLLBACK TO sp1;   -- Only undo the order_items insert
+COMMIT;               -- The order is still saved</pre>
+
+<h3>🔒 Isolation Levels</h3>
+<table class="cmp-table">
+<tr><th>Level</th><th>Dirty Read</th><th>Non-Repeatable Read</th><th>Phantom Read</th><th>Performance</th></tr>
+<tr><td><code>READ UNCOMMITTED</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>⚡ Fastest</td></tr>
+<tr><td><code>READ COMMITTED</code></td><td>No</td><td>Yes</td><td>Yes</td><td>🔵 Good</td></tr>
+<tr><td><code>REPEATABLE READ</code></td><td>No</td><td>No</td><td>Yes</td><td>🟡 Moderate</td></tr>
+<tr><td><code>SERIALIZABLE</code></td><td>No</td><td>No</td><td>No</td><td>🔴 Slowest</td></tr>
+</table>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Default Isolation Levels</div>
+<ul>
+<li><strong>PostgreSQL</strong>: READ COMMITTED (best balance)</li>
+<li><strong>MySQL (InnoDB)</strong>: REPEATABLE READ</li>
+<li><strong>SQL Server</strong>: READ COMMITTED</li>
+<li><strong>SQLite</strong>: SERIALIZABLE (single-writer)</li>
+</ul>
+</div>
+</div>`,sql:`-- Transaction demo
+BEGIN TRANSACTION;
+
+-- Give everyone in department 1 a raise:
+UPDATE employees SET salary = salary + 1000
+WHERE department_id = 1;
+
+-- Check the results before committing:
+SELECT first_name, salary 
+FROM employees WHERE department_id = 1;
+
+-- Commit to save, or uncomment ROLLBACK to undo:
+COMMIT;
+-- ROLLBACK;`}
+]},
+
+{name:"Stored Procedures",icon:"⚙️",color:"#f59e0b",slides:[
+{title:"Stored Procedures & Functions",subtitle:"Reusable server-side logic",content:`
+<div class="slide-body">
+<h3>⚙️ What are Stored Procedures?</h3>
+<p>Pre-compiled SQL code stored in the database that can accept parameters, contain logic (IF/ELSE, loops), and be called by name.</p>
+
+<pre>-- PostgreSQL syntax:
+CREATE OR REPLACE FUNCTION give_raise(
+    emp_id INT, 
+    raise_pct DECIMAL
+) RETURNS VOID AS $$
+BEGIN
+    UPDATE employees 
+    SET salary = salary * (1 + raise_pct / 100)
+    WHERE id = emp_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Call it:
+SELECT give_raise(5, 10);  -- 10% raise for employee #5
+
+-- MySQL syntax:
+DELIMITER //
+CREATE PROCEDURE give_raise(IN emp_id INT, IN raise_pct DECIMAL(5,2))
+BEGIN
+    UPDATE employees SET salary = salary * (1 + raise_pct / 100) WHERE id = emp_id;
+END //
+DELIMITER ;</pre>
+
+<div class="pros-cons">
+<div class="pros"><h4>✅ Pros of Stored Procedures</h4><ul>
+<li>Reduced network traffic (logic on server)</li>
+<li>Centralized business logic</li>
+<li>Security (grant EXECUTE, not table access)</li>
+<li>Pre-compiled for faster execution</li>
+<li>Atomic operations</li>
+</ul></div>
+<div class="cons"><h4>❌ Cons of Stored Procedures</h4><ul>
+<li>Vendor lock-in (not portable)</li>
+<li>Harder to debug and test</li>
+<li>Version control is difficult</li>
+<li>Can become unmaintainable "spaghetti SQL"</li>
+<li>Scaling requires DB server scaling</li>
+</ul></div>
+</div>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ Modern Trend</div>
+<p>Many teams are moving business logic from stored procedures to application code (microservices). Stored procedures are still valuable for complex data transformations, ETL, and operations that benefit from being close to the data.</p>
+</div>
+</div>`,sql:`-- SQLite doesn't support stored procedures natively,
+-- but we can demonstrate the concept with a complex query
+-- that would typically be a stored procedure:
+
+-- "Procedure": Calculate department budget utilization
+SELECT 
+    d.name AS department,
+    d.budget AS allocated_budget,
+    SUM(e.salary) AS actual_payroll,
+    ROUND(SUM(e.salary) / d.budget * 100, 1) || '%' AS utilization,
+    CASE 
+        WHEN SUM(e.salary) > d.budget THEN '🔴 Over Budget!'
+        WHEN SUM(e.salary) > d.budget * 0.9 THEN '🟡 Near Limit'
+        ELSE '🟢 Within Budget'
+    END AS status
+FROM departments d
+LEFT JOIN employees e ON d.id = e.department_id
+GROUP BY d.id, d.name, d.budget
+ORDER BY utilization DESC;`}
+]},
+
+{name:"Triggers",icon:"🎯",color:"#ec4899",slides:[
+{title:"Triggers — Automatic Actions",subtitle:"Execute code automatically on data changes",content:`
+<div class="slide-body">
+<h3>🎯 What are Triggers?</h3>
+<p>Triggers are special procedures that automatically execute in response to specific events (INSERT, UPDATE, DELETE) on a table.</p>
+
+<pre>-- SQLite trigger syntax:
+CREATE TRIGGER log_salary_change
+AFTER UPDATE OF salary ON employees
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_log (table_name, action, old_value, new_value, changed_at)
+    VALUES ('employees', 'SALARY_CHANGE', OLD.salary, NEW.salary, datetime('now'));
+END;
+
+-- PostgreSQL syntax:
+CREATE OR REPLACE FUNCTION log_salary_trigger()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO audit_log VALUES (OLD.salary, NEW.salary, NOW());
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER salary_audit
+AFTER UPDATE ON employees
+FOR EACH ROW
+WHEN (OLD.salary IS DISTINCT FROM NEW.salary)
+EXECUTE FUNCTION log_salary_trigger();</pre>
+
+<h3>⏰ Trigger Timing</h3>
+<table class="cmp-table">
+<tr><th>Timing</th><th>When</th><th>Use Case</th></tr>
+<tr><td><code>BEFORE</code></td><td>Before the operation</td><td>Validation, auto-fill fields</td></tr>
+<tr><td><code>AFTER</code></td><td>After the operation</td><td>Audit logging, notifications</td></tr>
+<tr><td><code>INSTEAD OF</code></td><td>Replaces the operation</td><td>Updatable views</td></tr>
+</table>
+
+<div class="pros-cons">
+<div class="pros"><h4>✅ When to Use Triggers</h4><ul>
+<li>Audit logging / change tracking</li>
+<li>Auto-updating timestamps (updated_at)</li>
+<li>Maintaining derived/summary tables</li>
+<li>Enforcing complex business rules</li>
+</ul></div>
+<div class="cons"><h4>❌ When NOT to Use Triggers</h4><ul>
+<li>Complex business logic (use app code)</li>
+<li>Cascading triggers (trigger chains = nightmares)</li>
+<li>Performance-critical bulk operations</li>
+<li>Logic that should be visible to developers</li>
+</ul></div>
+</div>
+
+<div class="info-box danger">
+<div class="info-box-title">🚨 Trigger Dangers</div>
+<p>Triggers are "invisible" — they run without explicit calls. This makes debugging extremely difficult. A simple UPDATE can trigger a cascade of hidden actions. Use sparingly and document thoroughly.</p>
+</div>
+</div>`,sql:`-- Create an audit log table and trigger
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    table_name TEXT,
+    action TEXT,
+    details TEXT,
+    changed_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Create a trigger for employee salary changes
+CREATE TRIGGER IF NOT EXISTS trg_salary_audit
+AFTER UPDATE OF salary ON employees
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_log (table_name, action, details)
+    VALUES ('employees', 'SALARY_UPDATE', 
+            OLD.first_name || ': $' || OLD.salary || ' → $' || NEW.salary);
+END;
+
+-- Test it: Update a salary
+UPDATE employees SET salary = salary + 5000 WHERE id = 1;
+
+-- Check the audit log:
+SELECT * FROM audit_log ORDER BY id DESC;`}
+]},
+
+{name:"Normalization",icon:"📐",color:"#ef4444",slides:[
+{title:"Database Normalization",subtitle:"Organizing data to eliminate redundancy",content:`
+<div class="slide-body">
+<h3>📐 What is Normalization?</h3>
+<p>The process of organizing database tables to minimize data redundancy and dependency. Each normal form builds on the previous one.</p>
+
+<h3>1️⃣ First Normal Form (1NF)</h3>
+<ul>
+<li>Each cell contains a <strong>single atomic value</strong> (no lists, no comma-separated values)</li>
+<li>Each column contains values of the <strong>same type</strong></li>
+<li>Each row is <strong>uniquely identifiable</strong> (has a primary key)</li>
+</ul>
+<pre>-- ❌ Violates 1NF (multi-valued column):
+| student | courses           |
+|---------|-------------------|
+| Alice   | Math, Physics     |  ← Multiple values!
+
+-- ✅ 1NF:
+| student | course  |
+|---------|---------|
+| Alice   | Math    |
+| Alice   | Physics |</pre>
+
+<h3>2️⃣ Second Normal Form (2NF)</h3>
+<ul>
+<li>Must be in 1NF</li>
+<li>No <strong>partial dependencies</strong>: non-key columns must depend on the ENTIRE primary key</li>
+</ul>
+<pre>-- ❌ Violates 2NF (student_name depends only on student_id, not course):
+PK = (student_id, course_id)
+| student_id | course_id | student_name | grade |
+-- student_name depends on student_id alone!
+
+-- ✅ 2NF: Split into two tables
+students(student_id, student_name)
+enrollments(student_id, course_id, grade)</pre>
+
+<h3>3️⃣ Third Normal Form (3NF)</h3>
+<ul>
+<li>Must be in 2NF</li>
+<li>No <strong>transitive dependencies</strong>: non-key columns can't depend on other non-key columns</li>
+</ul>
+<pre>-- ❌ Violates 3NF (city depends on zip_code, not on PK directly):
+| emp_id | zip_code | city     |  ← city depends on zip_code
+
+-- ✅ 3NF:
+employees(emp_id, zip_code)
+locations(zip_code, city)</pre>
+
+<div class="info-box warn">
+<div class="info-box-title">⚠️ Denormalization</div>
+<p>Sometimes you intentionally denormalize for performance. Read-heavy applications (dashboards, reports) benefit from pre-joined data. It's a trade-off: <strong>faster reads vs slower writes + potential inconsistency</strong>.</p>
+</div>
+</div>`,sql:`-- Our database is already normalized! Let's verify:
+-- Employees don't store department names (that's in departments table)
+-- Employee-Project relationship is in a separate junction table
+
+-- This shows proper normalization:
+SELECT 'employees columns:' AS info;
+PRAGMA table_info(employees);
+
+-- The junction table (many-to-many):
+-- SELECT 'employee_projects columns:' AS info;
+-- PRAGMA table_info(employee_projects);`}
+]},
+
+{name:"String & Date Functions",icon:"🔧",color:"#4f46e5",slides:[
+{title:"Essential SQL Functions",subtitle:"String manipulation and date operations",content:`
+<div class="slide-body">
+<h3>📝 String Functions</h3>
+<table class="cmp-table">
+<tr><th>Function</th><th>Example</th><th>Result</th></tr>
+<tr><td><code>UPPER(s)</code></td><td>UPPER('hello')</td><td>HELLO</td></tr>
+<tr><td><code>LOWER(s)</code></td><td>LOWER('HELLO')</td><td>hello</td></tr>
+<tr><td><code>LENGTH(s)</code></td><td>LENGTH('hello')</td><td>5</td></tr>
+<tr><td><code>SUBSTR(s,start,len)</code></td><td>SUBSTR('hello',2,3)</td><td>ell</td></tr>
+<tr><td><code>REPLACE(s,old,new)</code></td><td>REPLACE('hello','l','r')</td><td>herro</td></tr>
+<tr><td><code>TRIM(s)</code></td><td>TRIM('  hi  ')</td><td>hi</td></tr>
+<tr><td><code>LTRIM/RTRIM</code></td><td>LTRIM('  hi')</td><td>hi</td></tr>
+<tr><td><code>INSTR(s,sub)</code></td><td>INSTR('hello','ll')</td><td>3</td></tr>
+<tr><td><code>||</code> (concat)</td><td>'a' || 'b'</td><td>ab</td></tr>
+</table>
+
+<h3>📅 Date Functions (SQLite)</h3>
+<table class="cmp-table">
+<tr><th>Function</th><th>Example</th><th>Result</th></tr>
+<tr><td><code>DATE('now')</code></td><td>DATE('now')</td><td>2024-01-15</td></tr>
+<tr><td><code>TIME('now')</code></td><td>TIME('now')</td><td>14:30:00</td></tr>
+<tr><td><code>DATETIME('now')</code></td><td>DATETIME('now')</td><td>2024-01-15 14:30:00</td></tr>
+<tr><td><code>STRFTIME(fmt, date)</code></td><td>STRFTIME('%Y', '2024-01-15')</td><td>2024</td></tr>
+<tr><td><code>JULIANDAY(date)</code></td><td>JULIANDAY('now') - JULIANDAY(date)</td><td>Days between</td></tr>
+</table>
+
+<h3>🔄 Type Casting</h3>
+<pre>CAST(value AS type)     -- Standard SQL
+-- Examples:
+CAST('42' AS INTEGER)   -- String to number
+CAST(42 AS TEXT)         -- Number to string
+CAST(3.14 AS INTEGER)   -- Truncates to 3</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Date Functions Vary by Database</div>
+<p>Date functions are the LEAST standardized across databases. PostgreSQL uses <code>DATE_TRUNC</code>, MySQL uses <code>DATE_FORMAT</code>, SQL Server uses <code>DATEPART</code>. Always check your specific database's documentation.</p>
+</div>
+</div>`,sql:`-- String and date function playground
+SELECT 
+    first_name,
+    UPPER(first_name) AS upper_name,
+    LENGTH(first_name) AS name_len,
+    SUBSTR(email, INSTR(email, '@') + 1) AS email_domain,
+    hire_date,
+    STRFTIME('%Y', hire_date) AS hire_year,
+    STRFTIME('%m', hire_date) AS hire_month,
+    CAST(JULIANDAY('now') - JULIANDAY(hire_date) AS INT) AS days_employed,
+    REPLACE(email, '@', ' [at] ') AS safe_email
+FROM employees
+ORDER BY hire_date
+LIMIT 8;`}
+]},
+
+{name:"Partitioning & Sharding",icon:"📦",color:"#6366f1",slides:[
+{title:"Horizontal Partitioning & Sharding",subtitle:"Scaling tables beyond single-disk limits",content:`
+<div class="slide-body">
+<h3>Why Partition?</h3>
+<p>When a table grows past millions of rows, scanning indexes or running maintenance (<code>VACUUM</code>, backups) on a single massive file becomes a bottleneck. <strong>Partitioning</strong> splits the table physically into smaller child tables while keeping a unified logical table interface.</p>
+
+<h3>Partitioning Strategies</h3>
+<ul>
+<li><strong>Range Partitioning:</strong> Split by date or numeric interval (e.g., <code>orders_2026_q1</code>, <code>orders_2026_q2</code>).</li>
+<li><strong>List Partitioning:</strong> Split by explicit category values (e.g., <code>users_na</code>, <code>users_eu</code>).</li>
+<li><strong>Hash Partitioning:</strong> Modulo hash of ID across N buckets for even write balancing.</li>
+</ul>
+
+<div class="info-box tip">
+<div class="info-box-title">💡 Partition Pruning</div>
+<p>When your query filters by the partition key (<code>WHERE order_date >= '2026-04-01'</code>), the optimizer skips checking irrelevant partition tables entirely!</p>
+</div>
+</div>`,sql:`-- Simulating declarative partition querying via UNION ALL:
+SELECT 'Q1 Partition' AS source_table, COUNT(*) AS row_count, AVG(total_price) AS avg_order
+FROM orders WHERE order_date < '2023-07-01'
+UNION ALL
+SELECT 'Q2 Partition' AS source_table, COUNT(*) AS row_count, AVG(total_price) AS avg_order
+FROM orders WHERE order_date >= '2023-07-01';`}
+]},
+
+{name:"Concurrency & MVCC",icon:"⚡",color:"#10b981",slides:[
+{title:"Multi-Version Concurrency Control",subtitle:"High concurrency without read/write locking contention",content:`
+<div class="slide-body">
+<h3>The Core Philosophy of MVCC</h3>
+<p>In traditional locking databases, a writing transaction locks the table or row, forcing all reading queries to wait. Under <strong>MVCC (PostgreSQL, MySQL InnoDB, Oracle)</strong>:</p>
+<div class="info-box tip">
+<div class="info-box-title">🌟 Golden Rule of MVCC</div>
+<p><strong>Readers NEVER block Writers, and Writers NEVER block Readers!</strong></p>
+</div>
+
+<h3>How It Works</h3>
+<ol>
+<li>When a row is updated, the engine writes a <strong>new version</strong> of the row stamped with the current transaction ID (<code>xmin</code> / <code>xmax</code>).</li>
+<li>Concurrent readers see a historical snapshot valid at the exact millisecond their transaction started.</li>
+<li>Dead historical row versions are periodically swept up by background garbage collectors (<code>VACUUM</code> in PostgreSQL).</li>
+</ol>
+</div>`,sql:`-- Inspecting active transaction simulation and row states:
+SELECT id, name, budget, 
+       'v1.0 (Active Snapshot)' AS mvcc_version_state
+FROM departments
+WHERE budget > 800000;`}
+]},
+
+{name:"JSON & NoSQL in SQL",icon:"📄",color:"#f59e0b",slides:[
+{title:"Querying Semi-Structured JSON",subtitle:"Combining relational integrity with document flexibility",content:`
+<div class="slide-body">
+<h3>Why Hybrid Relational + JSON?</h3>
+<p>Use rigid SQL tables for core structured entities (Users, Payments) and use <strong>JSON/JSONB columns</strong> for dynamic user attributes, custom product specs, or webhook payloads.</p>
+
+<h3>JSON Functions in SQL</h3>
+<pre>-- Extract JSON scalar values:
+SELECT json_extract(attributes, '$.theme') FROM user_settings;
+
+-- PostgreSQL JSONB native operator:
+SELECT metadata->>'role' FROM users WHERE metadata@>'{"verified": true}';</pre>
+
+<div class="info-box tip">
+<div class="info-box-title">⚡ Inverted GIN Indexing</div>
+<p>You can create specialized indexes directly on JSON paths (<code>CREATE INDEX idx_json ON users USING GIN (metadata)</code>), giving sub-millisecond document lookups inside your relational engine!</p>
+</div>
+</div>`,sql:`-- SQLite JSON extraction demo:
+SELECT id, name,
+       json_object('category', category, 'in_stock', stock > 0, 'price_tier', CASE WHEN price > 200 THEN 'Premium' ELSE 'Standard' END) AS generated_json_doc
+FROM products
+LIMIT 5;`}
+]},
+
+{name:"Security & Row-Level Security",icon:"🛡️",color:"#ec4899",slides:[
+{title:"Data Access Control & Tenant Isolation",subtitle:"Enforcing security policies inside the database engine",content:`
+<div class="slide-body">
+<h3>DCL — Data Control Language</h3>
+<pre>GRANT SELECT, INSERT ON orders TO analytics_service;
+REVOKE DELETE ON orders FROM analytics_service;</pre>
+
+<h3>Row-Level Security (RLS) ⭐</h3>
+<p>In multi-tenant SaaS applications, preventing data leaks across customers is paramount. Instead of relying purely on application WHERE clauses (<code>WHERE tenant_id = 42</code>), <strong>Row-Level Security</strong> enforces policies directly inside the query execution engine.</p>
+
+<pre>ALTER TABLE tenant_orders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_policy ON tenant_orders
+USING (tenant_id = current_setting('app.current_tenant_id')::uuid);</pre>
+<p>Even if an engineer executes <code>SELECT * FROM tenant_orders</code>, the database automatically appends the tenant filter!</p>
+</div>`,sql:`-- Simulating Row-Level Security (RLS) filtering:
+-- Imagine session tenant_id is set to Customer #1 (TechCorp):
+SELECT o.id AS order_id, c.name AS tenant_name, p.name AS product, o.total_price
+FROM orders o
+JOIN customers c ON o.customer_id = c.id
+JOIN products p ON o.product_id = p.id
+WHERE c.id = 1; -- Enforced transparently by RLS policy`}
+]},
+
+{name:"Backup & Replication",icon:"💾",color:"#06b6d4",slides:[
+{title:"WAL Logging & Point-In-Time Recovery",subtitle:"Ensuring durability and zero data loss architecture",content:`
+<div class="slide-body">
+<h3>Write-Ahead Logging (WAL)</h3>
+<p>To ensure ACID Durability without incurring massive disk random I/O overhead on every transaction commit, engines sequentially append changes to a rapid <strong>Write-Ahead Log (WAL)</strong> before updating physical data pages.</p>
+
+<h3>Point-In-Time Recovery (PITR)</h3>
+<p>By taking weekly base disk snapshots and continuously archiving WAL stream files, DBAs can replay transactions up to any exact second in time—allowing full recovery even if someone runs <code>DROP TABLE</code> at 2:14:05 PM!</p>
+
+<h3>Read Replicas & High Availability</h3>
+<p>Primary servers stream WAL logs to N Read Replicas. All write queries (<code>INSERT/UPDATE</code>) route to Primary, while heavy read queries (<code>SELECT</code>) load-balance across Replicas.</p>
+</div>`,sql:`-- Simulating Database Diagnostics & Table Status:
+SELECT 'employees' AS table_name, COUNT(*) AS total_rows, 'Healthy (Replicated)' AS status FROM employees
+UNION ALL
+SELECT 'orders' AS table_name, COUNT(*) AS total_rows, 'Healthy (Replicated)' AS status FROM orders
+UNION ALL
+SELECT 'products' AS table_name, COUNT(*) AS total_rows, 'Healthy (Replicated)' AS status FROM products;`}
+]}
+];
+
+// ──────────────────────────────────────────────
+// DATABASE SETUP
+// ──────────────────────────────────────────────
+const SETUP_SQL = `
+CREATE TABLE departments (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    location TEXT,
+    budget REAL
+);
+INSERT INTO departments VALUES (1, 'Engineering', 'San Francisco', 2000000);
+INSERT INTO departments VALUES (2, 'Marketing', 'New York', 800000);
+INSERT INTO departments VALUES (3, 'Sales', 'Chicago', 1200000);
+INSERT INTO departments VALUES (4, 'HR', 'New York', 500000);
+INSERT INTO departments VALUES (5, 'Finance', 'San Francisco', 900000);
+INSERT INTO departments VALUES (6, 'Research', 'Boston', 1500000);
+
+CREATE TABLE employees (
+    id INTEGER PRIMARY KEY,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT UNIQUE,
+    department_id INTEGER,
+    salary REAL,
+    hire_date TEXT,
+    manager_id INTEGER,
+    is_active INTEGER DEFAULT 1,
+    FOREIGN KEY (department_id) REFERENCES departments(id),
+    FOREIGN KEY (manager_id) REFERENCES employees(id)
+);
+INSERT INTO employees VALUES (1,'Alice','Johnson','alice@company.com',1,95000,'2019-03-15',NULL,1);
+INSERT INTO employees VALUES (2,'Bob','Smith','bob@company.com',1,88000,'2020-06-01',1,1);
+INSERT INTO employees VALUES (3,'Carol','Williams','carol@company.com',2,72000,'2020-09-10',1,1);
+INSERT INTO employees VALUES (4,'David','Brown','david@company.com',1,92000,'2018-01-20',1,1);
+INSERT INTO employees VALUES (5,'Eva','Davis','eva@company.com',3,67000,'2021-04-05',1,1);
+INSERT INTO employees VALUES (6,'Frank','Miller','frank@company.com',2,78000,'2019-11-12',3,1);
+INSERT INTO employees VALUES (7,'Grace','Wilson','grace@company.com',3,71000,'2022-02-28',5,1);
+INSERT INTO employees VALUES (8,'Henry','Moore','henry@company.com',4,58000,'2021-07-15',1,1);
+INSERT INTO employees VALUES (9,'Ivy','Taylor','ivy@company.com',1,105000,'2017-05-20',NULL,1);
+INSERT INTO employees VALUES (10,'Jack','Anderson','jack@company.com',5,82000,'2020-10-01',1,1);
+INSERT INTO employees VALUES (11,'Karen','Thomas','karen@company.com',3,69000,'2022-08-14',5,1);
+INSERT INTO employees VALUES (12,'Leo','Jackson','leo@company.com',6,91000,'2019-06-30',1,1);
+INSERT INTO employees VALUES (13,'Mia','White','mia@company.com',2,65000,'2023-01-10',3,1);
+INSERT INTO employees VALUES (14,'Nathan','Harris','nathan@company.com',6,97000,'2018-09-22',12,1);
+INSERT INTO employees VALUES (15,'Olivia','Martin','olivia@company.com',5,76000,'2021-03-18',10,1);
+INSERT INTO employees VALUES (16,'Paul','Garcia','paul@company.com',1,84000,'2020-12-05',4,0);
+INSERT INTO employees VALUES (17,'Quinn','Martinez','quinn@company.com',4,62000,'2022-06-20',8,1);
+INSERT INTO employees VALUES (18,'Rachel','Robinson','rachel@company.com',3,73000,'2021-09-08',5,1);
+INSERT INTO employees VALUES (19,'Sam','Clark','sam@company.com',6,88000,'2019-04-14',12,1);
+INSERT INTO employees VALUES (20,'Tina','Rodriguez','tina@company.com',5,79000,'2020-08-25',10,1);
+
+CREATE TABLE projects (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    department_id INTEGER,
+    start_date TEXT,
+    end_date TEXT,
+    budget REAL,
+    status TEXT DEFAULT 'active',
+    FOREIGN KEY (department_id) REFERENCES departments(id)
+);
+INSERT INTO projects VALUES (1,'Cloud Migration',1,'2023-01-01','2024-06-30',500000,'active');
+INSERT INTO projects VALUES (2,'Brand Refresh',2,'2023-03-15','2023-12-31',200000,'completed');
+INSERT INTO projects VALUES (3,'Sales Portal',3,'2023-06-01','2024-03-31',350000,'active');
+INSERT INTO projects VALUES (4,'AI Research',6,'2023-09-01',NULL,800000,'active');
+INSERT INTO projects VALUES (5,'Mobile App',1,'2024-01-15','2024-12-31',400000,'active');
+
+CREATE TABLE employee_projects (
+    employee_id INTEGER,
+    project_id INTEGER,
+    role TEXT,
+    hours_worked REAL DEFAULT 0,
+    PRIMARY KEY (employee_id, project_id),
+    FOREIGN KEY (employee_id) REFERENCES employees(id),
+    FOREIGN KEY (project_id) REFERENCES projects(id)
+);
+INSERT INTO employee_projects VALUES (1,1,'Lead',320);
+INSERT INTO employee_projects VALUES (2,1,'Developer',280);
+INSERT INTO employee_projects VALUES (4,1,'Developer',250);
+INSERT INTO employee_projects VALUES (9,1,'Architect',200);
+INSERT INTO employee_projects VALUES (3,2,'Lead',180);
+INSERT INTO employee_projects VALUES (6,2,'Designer',150);
+INSERT INTO employee_projects VALUES (13,2,'Coordinator',120);
+INSERT INTO employee_projects VALUES (5,3,'Lead',200);
+INSERT INTO employee_projects VALUES (7,3,'Sales Rep',160);
+INSERT INTO employee_projects VALUES (11,3,'Analyst',140);
+INSERT INTO employee_projects VALUES (12,4,'Lead',300);
+INSERT INTO employee_projects VALUES (14,4,'Researcher',280);
+INSERT INTO employee_projects VALUES (19,4,'Researcher',260);
+INSERT INTO employee_projects VALUES (2,5,'Lead',150);
+INSERT INTO employee_projects VALUES (16,5,'Developer',130);
+INSERT INTO employee_projects VALUES (4,5,'Developer',110);
+
+CREATE TABLE customers (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT,
+    city TEXT,
+    country TEXT,
+    created_at TEXT
+);
+INSERT INTO customers VALUES (1,'TechCorp','tech@corp.com','San Francisco','USA','2022-01-10');
+INSERT INTO customers VALUES (2,'GlobalInc','info@global.com','London','UK','2022-03-15');
+INSERT INTO customers VALUES (3,'DataSoft','hello@datasoft.com','Tokyo','Japan','2022-06-20');
+INSERT INTO customers VALUES (4,'CloudNet','sales@cloudnet.com','Berlin','Germany','2023-01-05');
+INSERT INTO customers VALUES (5,'AI Solutions','contact@aisol.com','New York','USA','2023-04-18');
+INSERT INTO customers VALUES (6,'WebDev Co','info@webdev.com','Sydney','Australia','2023-07-22');
+INSERT INTO customers VALUES (7,'SmartApps','hi@smartapps.com','Toronto','Canada','2023-10-30');
+INSERT INTO customers VALUES (8,'InnoTech','team@innotech.com','Singapore','Singapore','2024-01-12');
+
+CREATE TABLE products (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT,
+    price REAL,
+    stock INTEGER DEFAULT 0
+);
+INSERT INTO products VALUES (1,'Enterprise Suite','Software',999.99,50);
+INSERT INTO products VALUES (2,'Cloud Hosting','Service',49.99,999);
+INSERT INTO products VALUES (3,'API Gateway','Software',299.99,100);
+INSERT INTO products VALUES (4,'Data Analytics','Software',599.99,75);
+INSERT INTO products VALUES (5,'Support Plan','Service',29.99,999);
+INSERT INTO products VALUES (6,'Security Module','Software',199.99,120);
+INSERT INTO products VALUES (7,'Dev Tools Pro','Software',149.99,200);
+INSERT INTO products VALUES (8,'Training Course','Education',79.99,500);
+
+CREATE TABLE orders (
+    id INTEGER PRIMARY KEY,
+    customer_id INTEGER,
+    product_id INTEGER,
+    quantity INTEGER,
+    total_price REAL,
+    order_date TEXT,
+    status TEXT DEFAULT 'pending',
+    FOREIGN KEY (customer_id) REFERENCES customers(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+INSERT INTO orders VALUES (1,1,1,2,1999.98,'2023-02-15','completed');
+INSERT INTO orders VALUES (2,2,2,5,249.95,'2023-03-20','completed');
+INSERT INTO orders VALUES (3,1,3,1,299.99,'2023-05-10','completed');
+INSERT INTO orders VALUES (4,3,4,3,1799.97,'2023-07-08','completed');
+INSERT INTO orders VALUES (5,5,1,1,999.99,'2023-09-12','completed');
+INSERT INTO orders VALUES (6,4,6,2,399.98,'2023-11-25','shipped');
+INSERT INTO orders VALUES (7,2,7,4,599.96,'2024-01-03','shipped');
+INSERT INTO orders VALUES (8,6,8,10,799.90,'2024-02-14','pending');
+INSERT INTO orders VALUES (9,7,2,3,149.97,'2024-03-01','pending');
+INSERT INTO orders VALUES (10,8,5,1,29.99,'2024-03-15','pending');
+INSERT INTO orders VALUES (11,1,4,2,1199.98,'2024-04-01','pending');
+INSERT INTO orders VALUES (12,3,3,5,1499.95,'2024-04-10','shipped');
+`;
+
+// ──────────────────────────────────────────────
+// APP STATE
+// ──────────────────────────────────────────────
+let db = null;
+let currentSlideIndex = 0;
+let allSlides = [];
+
+// Flatten slides
+chapters.forEach((ch, ci) => {
+    ch.slides.forEach((sl, si) => {
+        allSlides.push({ ...sl, chapterIndex: ci, slideIndexInChapter: si, chapter: ch.name, chapterIcon: ch.icon, chapterColor: ch.color });
+    });
+});
+
+// ──────────────────────────────────────────────
+// INITIALIZE
+// ──────────────────────────────────────────────
+async function init() {
+    // Init SQL.js
+    const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}` });
+    db = new SQL.Database();
+    db.run(SETUP_SQL);
+
+    buildSidebar();
+    renderSlide(0);
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', e => {
+        if (e.target.tagName === 'TEXTAREA') {
+            if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); runSQL(); }
+            return;
+        }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextSlide(); }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevSlide(); }
+    });
+}
+
+function resetDB() {
+    const SQL = db.constructor;
+    db.close();
+    db = new SQL.Database();
+    db.run(SETUP_SQL);
+    document.getElementById('outputArea').innerHTML = '<div class="result-success">✅ Database reset to original state.</div>';
+}
+
+// ──────────────────────────────────────────────
+// SIDEBAR
+// ──────────────────────────────────────────────
+function buildSidebar() {
+    const nav = document.getElementById('sidebarNav');
+    let globalIdx = 0;
+    nav.innerHTML = chapters.map((ch, ci) => {
+        const slidesHtml = ch.slides.map((sl, si) => {
+            const idx = globalIdx++;
+            return `<div class="slide-link" data-idx="${idx}" onclick="goToSlide(${idx})">${sl.title}</div>`;
+        }).join('');
+        return `<div class="chapter-group" data-chapter="${ci}">
+            <button class="chapter-btn" onclick="toggleChapter(${ci})">
+                <span class="chapter-num">${ci + 1}</span>
+                <span>${ch.icon} ${ch.name}</span>
+            </button>
+            <div class="chapter-slides">${slidesHtml}</div>
+        </div>`;
+    }).join('');
+}
+
+function toggleChapter(ci) {
+    const group = document.querySelector(`.chapter-group[data-chapter="${ci}"]`);
+    group.classList.toggle('open');
+}
+
+function updateSidebar() {
+    const slide = allSlides[currentSlideIndex];
+    document.querySelectorAll('.chapter-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.slide-link').forEach(link => link.classList.remove('active'));
+    
+    const chapterGroup = document.querySelector(`.chapter-group[data-chapter="${slide.chapterIndex}"]`);
+    if (chapterGroup) {
+        chapterGroup.classList.add('open');
+        chapterGroup.querySelector('.chapter-btn').classList.add('active');
+    }
+    
+    const slideLink = document.querySelector(`.slide-link[data-idx="${currentSlideIndex}"]`);
+    if (slideLink) {
+        slideLink.classList.add('active');
+        slideLink.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+// ──────────────────────────────────────────────
+// SLIDE RENDERING
+// ──────────────────────────────────────────────
+function renderSlide(idx) {
+    if (idx < 0 || idx >= allSlides.length) return;
+    currentSlideIndex = idx;
+    const slide = allSlides[idx];
+    
+    const content = document.getElementById('slideContent');
+    content.classList.remove('animate');
+    void content.offsetWidth; // Force reflow
+    content.classList.add('animate');
+    
+    content.innerHTML = `
+        <div class="slide-chapter-label" style="color:${slide.chapterColor}">${slide.chapterIcon} Chapter ${slide.chapterIndex + 1}: ${slide.chapter}</div>
+        <div class="slide-title">${slide.title}</div>
+        <div class="slide-subtitle">${slide.subtitle}</div>
+        ${slide.content}
+    `;
+    
+    // Set SQL editor
+    document.getElementById('sqlInput').value = slide.sql;
+    document.getElementById('outputArea').innerHTML = '<div class="result-message">▶ Click "Run" or press Ctrl+Enter to execute the query.</div>';
+    document.getElementById('execInfo').textContent = '';
+    
+    // Update controls
+    document.getElementById('slideCounter').textContent = `${idx + 1} / ${allSlides.length}`;
+    document.getElementById('prevBtn').disabled = idx === 0;
+    document.getElementById('nextBtn').disabled = idx === allSlides.length - 1;
+    document.getElementById('progressFill').style.width = `${((idx + 1) / allSlides.length) * 100}%`;
+    
+    updateSidebar();
+    content.scrollTop = 0;
+}
+
+function nextSlide() { renderSlide(currentSlideIndex + 1); }
+function prevSlide() { renderSlide(currentSlideIndex - 1); }
+function goToSlide(idx) { renderSlide(idx); }
+
+// ──────────────────────────────────────────────
+// SQL EXECUTION
+// ──────────────────────────────────────────────
+function runSQL() {
+    const sql = document.getElementById('sqlInput').value.trim();
+    if (!sql) return;
+    
+    const outputArea = document.getElementById('outputArea');
+    const execInfo = document.getElementById('execInfo');
+    
+    const startTime = performance.now();
+    
+    try {
+        const results = db.exec(sql);
+        const elapsed = (performance.now() - startTime).toFixed(1);
+        
+        if (results.length === 0) {
+            // Statement executed but returned no results (INSERT, UPDATE, DELETE, CREATE)
+            const changes = db.getRowsModified();
+            outputArea.innerHTML = `<div class="result-success">✅ Query executed successfully.</div>`;
+            execInfo.innerHTML = `<span class="rows-affected">${changes} row(s) affected</span> · <span class="exec-time">${elapsed}ms</span>`;
+        } else {
+            // Display all result sets
+            let html = '';
+            results.forEach((result, ri) => {
+                html += `<table class="result-table">
+                    <thead><tr>${result.columns.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr></thead>
+                    <tbody>${result.values.map(row => 
+                        `<tr>${row.map(val => `<td>${val === null ? '<span style="color:var(--text3);font-style:italic">NULL</span>' : escHtml(String(val))}</td>`).join('')}</tr>`
+                    ).join('')}</tbody>
+                </table>`;
+            });
+            outputArea.innerHTML = html;
+            const totalRows = results.reduce((sum, r) => sum + r.values.length, 0);
+            execInfo.innerHTML = `<span class="rows-affected">${totalRows} row(s) returned</span> · <span class="exec-time">${elapsed}ms</span>`;
+        }
+    } catch (err) {
+        const elapsed = (performance.now() - startTime).toFixed(1);
+        outputArea.innerHTML = `<div class="result-error">❌ Error: ${escHtml(err.message)}</div>`;
+        execInfo.innerHTML = `<span class="exec-time">${elapsed}ms</span>`;
+    }
+}
+
+function escHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
+// Start
+init();
+</script>
+</body>
+</html>

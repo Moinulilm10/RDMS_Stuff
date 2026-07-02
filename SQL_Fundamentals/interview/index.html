@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Interview Preparation - 105+ Questions with Answers & Recruiter Tips</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        :root {
+            --bg: #0a0a0f;
+            --bg2: #111827;
+            --bg3: #1a1a2e;
+            --bg4: #232740;
+            --accent: #6366f1;
+            --accent2: #818cf8;
+            --cyan: #22d3ee;
+            --green: #34d399;
+            --orange: #fbbf24;
+            --pink: #f472b6;
+            --red: #ef4444;
+            --text: #f1f5f9;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --border: #2d3352;
+            --radius: 14px
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7
+        }
+
+        /* BG Animation */
+        .bg-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .bg-glow .g {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .1
+        }
+
+        .g1 {
+            width: 600px;
+            height: 600px;
+            background: #6366f1;
+            top: -150px;
+            left: -100px
+        }
+
+        .g2 {
+            width: 400px;
+            height: 400px;
+            background: #22d3ee;
+            bottom: -100px;
+            right: -100px
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 50px 24px 30px
+        }
+
+        .header .badge {
+            display: inline-block;
+            padding: 6px 18px;
+            background: rgba(99, 102, 241, .12);
+            border: 1px solid rgba(99, 102, 241, .25);
+            border-radius: 50px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--accent2);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 16px
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff, #6366f1, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.15;
+            margin-bottom: 12px
+        }
+
+        .header p {
+            font-size: 1.05rem;
+            color: var(--text2);
+            max-width: 650px;
+            margin: 0 auto
+        }
+
+        /* Toolbar */
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(17, 24, 39, .92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: .9rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color .2s
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent)
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: .85rem
+        }
+
+        .filter-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap
+        }
+
+        .filter-btn {
+            padding: 7px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text2);
+            font-size: .8rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all .2s;
+            font-weight: 500
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff
+        }
+
+        .filter-btn.easy {
+            border-color: rgba(52, 211, 153, .3)
+        }
+
+        .filter-btn.easy.active {
+            background: var(--green);
+            border-color: var(--green)
+        }
+
+        .filter-btn.medium {
+            border-color: rgba(251, 191, 36, .3)
+        }
+
+        .filter-btn.medium.active {
+            background: var(--orange);
+            border-color: var(--orange);
+            color: #000
+        }
+
+        .filter-btn.hard {
+            border-color: rgba(239, 68, 68, .3)
+        }
+
+        .filter-btn.hard.active {
+            background: var(--red);
+            border-color: var(--red)
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 16px;
+            font-size: .8rem;
+            color: var(--text3);
+            margin-left: auto;
+            align-items: center
+        }
+
+        .stats-bar span {
+            display: flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        /* Main Content */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px
+        }
+
+        /* Category Section */
+        .category {
+            margin-bottom: 40px
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 16px 0;
+            border-bottom: 2px solid var(--border)
+        }
+
+        .category-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0
+        }
+
+        .category-header h2 {
+            font-size: 1.4rem;
+            font-weight: 800
+        }
+
+        .category-header .count {
+            margin-left: auto;
+            padding: 4px 14px;
+            background: var(--bg3);
+            border-radius: 20px;
+            font-size: .78rem;
+            color: var(--text2)
+        }
+
+        /* Question Card */
+        .q-card {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: all .3s
+        }
+
+        .q-card:hover {
+            border-color: rgba(99, 102, 241, .3)
+        }
+
+        .q-header {
+            padding: 18px 22px;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            transition: background .2s
+        }
+
+        .q-header:hover {
+            background: rgba(255, 255, 255, .02)
+        }
+
+        .q-num {
+            min-width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .78rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            background: var(--bg4);
+            color: var(--text2)
+        }
+
+        .q-text {
+            flex: 1;
+            font-weight: 600;
+            font-size: .96rem;
+            line-height: 1.5
+        }
+
+        .q-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0
+        }
+
+        .q-diff {
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px
+        }
+
+        .q-diff.easy {
+            background: rgba(52, 211, 153, .12);
+            color: var(--green)
+        }
+
+        .q-diff.medium {
+            background: rgba(251, 191, 36, .12);
+            color: var(--orange)
+        }
+
+        .q-diff.hard {
+            background: rgba(239, 68, 68, .12);
+            color: var(--red)
+        }
+
+        .q-toggle {
+            font-size: 1.2rem;
+            color: var(--text3);
+            transition: transform .3s;
+            cursor: pointer
+        }
+
+        .q-card.open .q-toggle {
+            transform: rotate(180deg)
+        }
+
+        /* Answer */
+        .q-answer {
+            display: none;
+            padding: 0 22px 22px;
+            padding-left: 70px
+        }
+
+        .q-card.open .q-answer {
+            display: block;
+            animation: fadeIn .3s ease
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .q-answer h4 {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--accent2);
+            margin: 14px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .q-answer p {
+            color: var(--text2);
+            font-size: .9rem;
+            margin-bottom: 10px
+        }
+
+        .q-answer ul {
+            margin: 0 0 12px 18px;
+            color: var(--text2);
+            font-size: .88rem
+        }
+
+        .q-answer li {
+            margin-bottom: 5px
+        }
+
+        .q-answer li strong {
+            color: var(--text)
+        }
+
+        .q-answer code {
+            background: var(--bg4);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .82rem;
+            color: var(--cyan)
+        }
+
+        .q-answer pre {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin: 10px 0 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .82rem;
+            line-height: 1.6;
+            color: var(--text2);
+            overflow-x: auto;
+            white-space: pre
+        }
+
+        /* Recruiter Tip */
+        .recruiter-tip {
+            background: rgba(99, 102, 241, .06);
+            border: 1px solid rgba(99, 102, 241, .15);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin: 14px 0;
+            position: relative
+        }
+
+        .recruiter-tip::before {
+            content: '🎤';
+            position: absolute;
+            top: -10px;
+            left: 14px;
+            background: var(--bg3);
+            padding: 0 6px;
+            font-size: .9rem
+        }
+
+        .recruiter-tip h5 {
+            color: var(--accent2);
+            font-size: .82rem;
+            font-weight: 700;
+            margin-bottom: 6px
+        }
+
+        .recruiter-tip p {
+            font-size: .84rem;
+            color: var(--text2);
+            margin: 0;
+            font-style: italic
+        }
+
+        /* Key Point */
+        .key-point {
+            background: rgba(52, 211, 153, .06);
+            border-left: 3px solid var(--green);
+            padding: 10px 16px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: .86rem;
+            color: var(--text2)
+        }
+
+        /* Compare table */
+        .cmp {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: .84rem
+        }
+
+        .cmp th {
+            background: var(--bg4);
+            padding: 8px 12px;
+            text-align: left;
+            color: var(--text);
+            font-weight: 600;
+            border: 1px solid var(--border)
+        }
+
+        .cmp td {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            color: var(--text2)
+        }
+
+        /* Print */
+        @media print {
+
+            .toolbar,
+            .bg-glow {
+                display: none !important
+            }
+
+            .q-answer {
+                display: block !important
+            }
+
+            .q-card {
+                break-inside: avoid
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-glow">
+        <div class="g g1"></div>
+        <div class="g g2"></div>
+    </div>
+
+    <div class="header">
+        <div class="badge">Comprehensive Interview Preparation</div>
+        <h1>SQL Interview Questions & Answers</h1>
+        <p>Over 105 curated questions spanning fundamentals, architecture, complex queries, and advanced senior
+            topics—complete with recruiter presentation tips.</p>
+    </div>
+
+    <div class="toolbar">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search across questions..." oninput="filterQuestions()">
+        </div>
+        <div class="filter-btns">
+            <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+            <button class="filter-btn easy" onclick="setFilter('easy',this)">Easy</button>
+            <button class="filter-btn medium" onclick="setFilter('medium',this)">Medium</button>
+            <button class="filter-btn hard" onclick="setFilter('hard',this)">Hard</button>
+        </div>
+        <div class="stats-bar">
+            <span id="visibleCount">Loading...</span>
+            <span>|</span>
+            <span><button class="filter-btn" onclick="expandAll()" style="padding:4px 10px">Expand All</button></span>
+            <span><button class="filter-btn" onclick="collapseAll()" style="padding:4px 10px">Collapse
+                    All</button></span>
+        </div>
+    </div>
+
+    <div class="container" id="questionsContainer"></div>
+
+    <script>
+        const data = [
+            // ═══════════════════════════════════════════
+            // 1. DATABASE BASICS & ARCHITECTURE
+            // ═══════════════════════════════════════════
+            {
+                cat: "Database Basics & Architecture", icon: "🏗️", color: "#6366f1", questions: [
+                    {
+                        q: "What is a database? How is it different from a spreadsheet?", d: "easy",
+                        a: `<p>A <strong>database</strong> is an organized collection of structured data stored electronically and managed by a DBMS. Unlike spreadsheets, databases offer:</p>
+<ul>
+<li><strong>Concurrency:</strong> Safe simultaneous reads and writes by thousands of users.</li>
+<li><strong>Scale:</strong> Optimized for gigabytes to petabytes of data without memory limits.</li>
+<li><strong>Integrity:</strong> Enforces data types, foreign keys, and rules to prevent bad data.</li>
+<li><strong>ACID Guarantees:</strong> Ensures transactions are atomic, consistent, isolated, and durable during failures.</li>
+</ul>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"I explain databases as the transactional backbone of software. While spreadsheets are great for ad-hoc user analysis on small sets, relational databases provide concurrency control, index optimization, and data integrity guarantees that scale to millions of concurrent operations."</p></div>`},
+
+                    {
+                        q: "What is an RDBMS? Name popular ones and their trade-offs.", d: "easy",
+                        a: `<p>An <strong>RDBMS (Relational Database Management System)</strong> stores data in tables linked by primary and foreign keys, using SQL for data manipulation.</p>
+<table class="cmp">
+<tr><th>Engine</th><th>Best For</th><th>Key Strengths</th></tr>
+<tr><td><strong>PostgreSQL</strong></td><td>Complex web apps, analytics, geo-spatial</td><td>Extensible, rich JSONB, PostGIS, standards-compliant.</td></tr>
+<tr><td><strong>MySQL</strong></td><td>Web applications, CMS (WordPress)</td><td>Fast reads, simple replication, huge community.</td></tr>
+<tr><td><strong>SQL Server</strong></td><td>Enterprise .NET ecosystems</td><td>Strong BI tooling, integrated security, robust optimizer.</td></tr>
+<tr><td><strong>SQLite</strong></td><td>Mobile apps, IoT, local development</td><td>Zero-config, single file, serverless embedded engine.</td></tr>
+</table>`},
+
+                    {
+                        q: "Explain SQL vs NoSQL. When would you choose each paradigm?", d: "medium",
+                        a: `<p><strong>SQL (Relational):</strong> Structured tables, strict schemas, ACID compliance, and complex multi-table joins.</p>
+<p><strong>NoSQL (Non-relational):</strong> Document (MongoDB), Key-Value (Redis), Columnar (Cassandra), or Graph (Neo4j) engines tailored for schema flexibility and high-scale horizontal partitioning.</p>
+<div class="key-point"><strong>Use SQL when:</strong> Data relationships are complex, financial accuracy is mandatory, or ad-hoc querying flexibility is needed.</div>
+<div class="key-point"><strong>Use NoSQL when:</strong> Schema evolves rapidly, massive ingest volume exceeds single-node vertical scaling, or access patterns are pure key-lookup.</div>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"In modern engineering, we practice polyglot persistence. For example, I typically use PostgreSQL as the system of record for structured order workflows, while leveraging Redis for sub-millisecond session caching and Elasticsearch for full-text product search."</p></div>`},
+
+                    {
+                        q: "What is the difference between Database, Schema, Table, and Tablespace?", d: "easy",
+                        a: `<ul>
+<li><strong>Database:</strong> A self-contained collection of schemas, users, and catalog data managed by an engine instance.</li>
+<li><strong>Schema:</strong> A logical folder or namespace inside a database that isolates related tables and permissions (e.g., <code>public</code>, <code>billing</code>, <code>analytics</code>).</li>
+<li><strong>Table:</strong> The physical storage unit consisting of ordered rows and typed columns.</li>
+<li><strong>Tablespace:</strong> A physical storage location on the file system or disk drive where database objects are actually written.</li>
+</ul>`},
+
+                    {
+                        q: "What are the four categories of SQL commands (DDL, DML, DCL, TCL)?", d: "easy",
+                        a: `<table class="cmp">
+<tr><th>Category</th><th>Full Name</th><th>Commands</th><th>Purpose</th></tr>
+<tr><td><strong>DDL</strong></td><td>Data Definition Language</td><td>CREATE, ALTER, DROP, TRUNCATE</td><td>Define or alter table schemas and indexes.</td></tr>
+<tr><td><strong>DML</strong></td><td>Data Manipulation Language</td><td>SELECT, INSERT, UPDATE, DELETE</td><td>Retrieve and modify table data rows.</td></tr>
+<tr><td><strong>DCL</strong></td><td>Data Control Language</td><td>GRANT, REVOKE</td><td>Manage user roles and security privileges.</td></tr>
+<tr><td><strong>TCL</strong></td><td>Transaction Control Language</td><td>COMMIT, ROLLBACK, SAVEPOINT</td><td>Manage transaction boundaries and savepoints.</td></tr>
+</table>`},
+
+                    {
+                        q: "What is the difference between 2-Tier and 3-Tier database architecture?", d: "medium",
+                        a: `<p>In a <strong>2-tier architecture (Client-Server)</strong>, client applications talk directly to the database server via drivers like ODBC/JDBC. Security and business logic often reside inside UI code or stored procedures.</p>
+<p>In a <strong>3-tier architecture</strong>, an application server (API/backend layer) sits between the client and database. This prevents direct database exposure, improves connection pooling, centralizes security, and allows independent scaling of application logic.</p>`},
+
+                    {
+                        q: "What is an internal database storage engine? Compare InnoDB vs MyISAM.", d: "hard",
+                        a: `<p>A storage engine handles how data rows and indexes are written to and read from disk.</p>
+<table class="cmp">
+<tr><th>Feature</th><th>InnoDB (Modern Default)</th><th>MyISAM (Legacy)</th></tr>
+<tr><td><strong>Transactions</strong></td><td>Full ACID support</td><td>No transaction support</td></tr>
+<tr><td><strong>Locking Level</strong></td><td>Row-level locking (high concurrency)</td><td>Table-level locking (slow writes)</td></tr>
+<tr><td><strong>Foreign Keys</strong></td><td>Supported</td><td>Not supported</td></tr>
+<tr><td><strong>Crash Recovery</strong></td><td>Automatic via Redo logs</td><td>Manual repair required after crash</td></tr>
+</table>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 2. DATA TYPES & STORAGE EFFICIENCY
+            // ═══════════════════════════════════════════
+            {
+                cat: "Data Types & Storage Efficiency", icon: "🔢", color: "#7c3aed", questions: [
+                    {
+                        q: "Why should you never use FLOAT or DOUBLE for monetary values?", d: "easy",
+                        a: `<p>Floating-point types use <strong>IEEE 754 base-2 approximation</strong>. Because base-10 fractions like 0.1 cannot be represented finitely in base-2 binary, tiny precision loss occurs.</p>
+<pre>SELECT 0.1 + 0.2; -- Produces 0.30000000000000004</pre>
+<p>Over millions of financial transactions, these rounding anomalies accumulate into significant ledger errors.</p>
+<div class="key-point">Always use exact fixed-point decimals like <code>DECIMAL(18,4) / NUMERIC(10,2)</code> or store currency values as integer cents (e.g., $19.99 stored as <code>1999</code>).</div>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"This is a classic financial engineering trap. I always specify DECIMAL for money. In one system review, converting legacy FLOAT price columns to DECIMAL eliminated persistent pennies-off rounding errors during end-of-day bank reconciliation."</p></div>`},
+
+                    {
+                        q: "Compare CHAR, VARCHAR, and TEXT. When should each be used?", d: "medium",
+                        a: `<table class="cmp">
+<tr><th>Type</th><th>Storage allocated</th><th>Performance characteristics</th><th>Optimal use case</th></tr>
+<tr><td><code>CHAR(n)</code></td><td>Fixed exactly at n bytes</td><td>Fast lookup; pads with trailing spaces.</td><td>ISO codes (CHAR(2) country code, MD5 hash).</td></tr>
+<tr><td><code>VARCHAR(n)</code></td><td>Variable length + 1-2 byte header</td><td>Saves space; no padding overhead.</td><td>Names, email addresses, URLs.</td></tr>
+<tr><td><code>TEXT / CLOB</code></td><td>Variable, up to gigabytes</td><td>Often stored out-of-row; slower sorts.</td><td>Long blog posts, JSON logs, document bodies.</td></tr>
+</table>`},
+
+                    {
+                        q: "What are the pros and cons of UUID vs Auto-Increment Integer primary keys?", d: "medium",
+                        a: `<table class="cmp">
+<tr><th>Aspect</th><th>Auto-Increment INT / BIGINT</th><th>UUID v4 (Random) / v7 (Time-ordered)</th></tr>
+<tr><td><strong>Storage Size</strong></td><td>4 or 8 bytes per row</td><td>16 bytes per row (binary) or 36 bytes (text)</td></tr>
+<tr><td><strong>B-Tree Indexing</strong></td><td>Sequential appends; optimal cache locality</td><td>Random UUIDs cause B-tree page splits and fragmentation</td></tr>
+<tr><td><strong>Security / ID Guessing</strong></td><td>Predictable (e.g., /users/42 exposes order)</td><td>Unpredictable and unguessable external ID</td></tr>
+<tr><td><strong>Distributed Generation</strong></td><td>Requires central DB coordination</td><td>Generated offline on client or API servers without collisions</td></tr>
+</table>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"I recommend a hybrid pattern: use sequential 8-byte BIGINT auto-increment IDs for internal foreign key joins to maintain B-tree performance, while generating UUID v7 (time-sequential) columns for public API endpoints and distributed tracing."</p></div>`},
+
+                    {
+                        q: "Explain the ENUM data type. Why do some architects avoid it?", d: "medium",
+                        a: `<p>An <code>ENUM</code> restricts a column to a predefined list of strings stored internally as compact integers.</p>
+<ul>
+<li><strong>Pros:</strong> Compact disk storage, fast integer comparison, built-in domain constraint check.</li>
+<li><strong>Cons:</strong> Adding or removing values requires schema locks (<code>ALTER TYPE</code>), non-standard across different SQL engines, and numeric ordering can confuse developers.</li>
+</ul>
+<p><strong>Modern Alternative:</strong> Use a standard <code>VARCHAR</code> column enforced by a table <code>CHECK (status IN ('active','closed'))</code> or a dedicated lookup reference table.</p>`},
+
+                    {
+                        q: "What is the difference between TIMESTAMP and TIMESTAMPTZ (or DATETIME)?", d: "medium",
+                        a: `<ul>
+<li><code>DATETIME / TIMESTAMP without timezone</code> stores literally the date and time provided (e.g., '2026-07-02 14:00:00') without context.</li>
+<li><code>TIMESTAMPTZ (TIMESTAMP with timezone)</code> converts the input time to UTC on storage and converts it back to the client session timezone on query retrieval.</li>
+</ul>
+<div class="key-point">For distributed or global systems, always store timestamps in UTC (using <code>TIMESTAMPTZ</code>) to avoid daylight savings confusion and cross-timezone comparison bugs.</div>`},
+
+                    {
+                        q: "What happens internally when column data exceeds row size limits?", d: "hard",
+                        a: `<p>Database pages are fixed in size (typically 8KB in SQL Server/PostgreSQL or 16KB in InnoDB). If a table contains wide columns (like multiple large <code>VARCHAR</code> or <code>TEXT</code> fields) that exceed the page limit:</p>
+<p>The engine stores an in-row <strong>pointer (20-24 bytes)</strong> and offloads the actual bulk data to separate <strong>Overflow Pages (or TOAST tables in PostgreSQL)</strong>. Querying overflow data requires extra disk reads unless excluded via specific column selection.</p>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 3. CRUD & QUERY EXECUTION ORDER
+            // ═══════════════════════════════════════════
+            {
+                cat: "CRUD & Query Execution Order", icon: "✏️", color: "#10b981", questions: [
+                    {
+                        q: "What is the logical order of operations when executing a SQL query?", d: "medium",
+                        a: `<p>SQL is declarative; you state what you want, but the engine parses and evaluates clauses in a strict sequence:</p>
+<pre>1. FROM & JOINs   -- Locate tables and construct Cartesian join sets
+2. WHERE          -- Filter individual raw rows
+3. GROUP BY       -- Collapse rows into distinct aggregate buckets
+4. HAVING         -- Filter aggregated group buckets
+5. SELECT         -- Evaluate expressions and assign column aliases
+6. DISTINCT       -- Deduplicate projected rows
+7. ORDER BY       -- Sort output rows (aliases can be used here!)
+8. LIMIT / OFFSET -- Truncate final result set for pagination</pre>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"Knowing this execution sequence immediately explains common SQL limitations—such as why you cannot reference a SELECT alias inside a WHERE clause, or why WHERE is orders of magnitude faster than filtering after GROUP BY inside HAVING."</p></div>`},
+
+                    {
+                        q: "Compare DELETE, TRUNCATE, and DROP in detail.", d: "easy",
+                        a: `<table class="cmp">
+<tr><th>Command</th><th>DELETE</th><th>TRUNCATE</th><th>DROP</th></tr>
+<tr><td><strong>Type</strong></td><td>DML (Data Manipulation)</td><td>DDL (Data Definition)</td><td>DDL (Data Definition)</td></tr>
+<tr><td><strong>Granularity</strong></td><td>Removes rows matching WHERE</td><td>Removes all rows instantly</td><td>Destroys table schema & rows</td></tr>
+<tr><td><strong>Transaction Log</strong></td><td>Logs every deleted row (slower)</td><td>Deallocates data pages (fast)</td><td>Logs catalog drop</td></tr>
+<tr><td><strong>Triggers Fired?</strong></td><td>Yes (ON DELETE triggers run)</td><td>No triggers fired</td><td>No table triggers fired</td></tr>
+<tr><td><strong>Identity Reset?</strong></td><td>Does not reset sequence</td><td>Resets auto-increment to 1</td><td>Destroys sequence</td></tr>
+</table>`},
+
+                    {
+                        q: "What is the difference between WHERE and HAVING clauses?", d: "easy",
+                        a: `<ul>
+<li><strong>WHERE</strong> filters individual rows <em>before</em> grouping occurs. It cannot contain aggregate functions like <code>COUNT()</code> or <code>AVG()</code>.</li>
+<li><strong>HAVING</strong> filters aggregated groups <em>after</em> the <code>GROUP BY</code> clause has processed rows.</li>
+</ul>
+<pre>SELECT dept_id, AVG(salary) FROM employees
+WHERE is_active = 1           -- 1. Filter out inactive employees first
+GROUP BY dept_id
+HAVING AVG(salary) > 85000;   -- 2. Filter groups having high average salary</pre>`},
+
+                    {
+                        q: "Explain the difference between IN and EXISTS. When is EXISTS faster?", d: "medium",
+                        a: `<table class="cmp">
+<tr><th>Behavior</th><th>IN Clause</th><th>EXISTS Clause</th></tr>
+<tr><td><strong>Evaluation</strong></td><td>Evaluates inner subquery completely into an in-memory set first.</td><td>Evaluates as a correlated boolean check per outer row.</td></tr>
+<tr><td><strong>Short-Circuiting</strong></td><td>No short-circuiting; scans full subquery.</td><td>Short-circuits immediately upon finding 1 matching record.</td></tr>
+<tr><td><strong>NULL Handling</strong></td><td><code>NOT IN</code> fails completely if subquery returns any NULL value!</td><td>Handles NULLs safely without unexpected empty sets.</td></tr>
+</table>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"For large datasets or correlated checks, I prefer EXISTS because it short-circuits on first match. Furthermore, NOT EXISTS protects against the famous NOT IN null trap where a single null inside the inner query causes zero rows to return."</p></div>`},
+
+                    {
+                        q: "What is SQL Injection, and how do parameterized queries prevent it?", d: "medium",
+                        a: `<p><strong>SQL Injection</strong> happens when untrusted user input is directly concatenated into dynamic SQL strings, allowing malicious attackers to alter query logic.</p>
+<pre>-- Vulnerable string concatenation:
+query = "SELECT * FROM users WHERE email = '" + input + "'";
+-- If input is: "' OR '1'='1'; DROP TABLE orders; --"
+-- Result executes arbitrary destructive commands!</pre>
+<p><strong>Prevention via Parameterized Queries (Prepared Statements):</strong></p>
+<p>Prepared statements send the SQL query template and data parameters separately to the database engine. The engine compiles the structure first, treating parameters strictly as literal values rather than executable code.</p>`},
+
+                    {
+                        q: "How does an UPSERT work across different database engines?", d: "medium",
+                        a: `<p>An UPSERT atomically inserts a new record or updates the existing record if a unique key conflict occurs.</p>
+<pre>-- PostgreSQL / SQLite syntax:
+INSERT INTO user_stats (user_id, login_count) VALUES (42, 1)
+ON CONFLICT (user_id) DO UPDATE SET login_count = user_stats.login_count + 1;
+
+-- MySQL syntax:
+INSERT INTO user_stats (user_id, login_count) VALUES (42, 1)
+ON DUPLICATE KEY UPDATE login_count = login_count + 1;
+
+-- SQL Server (MERGE statement):
+MERGE INTO user_stats USING (SELECT 42 AS uid) AS src ON user_stats.user_id = src.uid
+WHEN MATCHED THEN UPDATE SET login_count = login_count + 1
+WHEN NOT MATCHED THEN INSERT (user_id, login_count) VALUES (42, 1);</pre>`},
+
+                    {
+                        q: "What are wildcards in LIKE queries? Why do leading wildcards kill performance?", d: "easy",
+                        a: `<p>Wildcards match character patterns: <code>%</code> matches any sequence of characters, while <code>_</code> matches exactly one character.</p>
+<p>A query like <code>WHERE email LIKE 'admin%'</code> allows the B-tree index to jump directly to the letter 'a' and scan sequentially.</p>
+<div class="key-point">However, a leading wildcard like <code>WHERE email LIKE '%@gmail.com'</code> makes index binary searching impossible. The engine must perform a full index scan or table scan. Use inverted full-text indexes (GIN/Elasticsearch) for substring matching.</div>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 4. JOINS & RELATIONAL ALGEBRA
+            // ═══════════════════════════════════════════
+            {
+                cat: "Joins & Relational Algebra", icon: "🔗", color: "#06b6d4", questions: [
+                    {
+                        q: "Explain the 6 main SQL join types with practical examples.", d: "medium",
+                        a: `<table class="cmp">
+<tr><th>Join Type</th><th>Resulting Dataset</th><th>Common Scenario</th></tr>
+<tr><td><strong>INNER JOIN</strong></td><td>Returns only rows where match exists in both tables.</td><td>Get active orders with customer details.</td></tr>
+<tr><td><strong>LEFT JOIN</strong></td><td>Returns all left rows + matched right rows (NULL if missing).</td><td>List all users and any optional profile pictures.</td></tr>
+<tr><td><strong>RIGHT JOIN</strong></td><td>Returns all right rows + matched left rows.</td><td>Rarely used; mirror of LEFT JOIN.</td></tr>
+<tr><td><strong>FULL OUTER JOIN</strong></td><td>Returns all rows from both tables, filling NULLs where unmatched.</td><td>Reconcile inventory between two warehouse systems.</td></tr>
+<tr><td><strong>CROSS JOIN</strong></td><td>Cartesian product pairing every row with every row (M × N).</td><td>Generate matrix grids of all sizes and colors.</td></tr>
+<tr><td><strong>SELF JOIN</strong></td><td>Joining a table to itself using table aliases.</td><td>Traversing employee-manager hierarchies.</td></tr>
+</table>`},
+
+                    {
+                        q: "Explain the 3 physical join execution algorithms (Nested Loop, Hash, Merge).", d: "hard",
+                        a: `<p>When the query optimizer executes a join, it selects one of three physical algorithms based on statistics and indexes:</p>
+<h4>1. Nested Loop Join — O(N × M)</h4>
+<p>Loops through outer table rows and searches inner table for matches. Highly efficient for small tables or when the inner join column has a unique B-tree index (Index Nested Loop).</p>
+<h4>2. Hash Join — O(N + M)</h4>
+<p>Builds an in-memory hash table from the smaller table, then scans the larger table probing the hash table for matches. Optimal for large, unsorted datasets without indexes.</p>
+<h4>3. Merge Join (Sort-Merge) — O(N log N + M log M)</h4>
+<p>Sorts both inputs on the join key, then merges them linearly in a single pass. Extremely fast when tables are already sorted via clustered indexes.</p>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"When diagnosing slow joins in EXPLAIN plans, I check which physical join is selected. If I see a slow Hash Join on two massive tables, adding composite B-tree indexes often prompts the optimizer to switch to a lightning-fast Merge Join or Index Nested Loop."</p></div>`},
+
+                    {
+                        q: "What is the difference between filtering in the ON clause vs WHERE clause in a LEFT JOIN?", d: "hard",
+                        a: `<p>In an <code>INNER JOIN</code>, <code>ON</code> and <code>WHERE</code> behave identically. In a <code>LEFT JOIN</code>, the difference is critical:</p>
+<pre>-- ON clause: Filters right table BEFORE joining. All left rows are preserved!
+SELECT u.name, o.total FROM users u
+LEFT JOIN orders o ON u.id = o.user_id AND o.status = 'completed';
+-- Result: All users appear. Users without completed orders show NULL for o.total.
+
+-- WHERE clause: Filters combined result AFTER joining.
+SELECT u.name, o.total FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE o.status = 'completed';
+-- Result: Eliminates users with NULL status! Converts LEFT JOIN into an INNER JOIN.</pre>`},
+
+                    {
+                        q: "How do you write an Anti-Join to find orphaned or missing records?", d: "medium",
+                        a: `<p>An anti-join finds records in table A that have no corresponding match in table B using a <code>LEFT JOIN</code> combined with an <code>IS NULL</code> filter:</p>
+<pre>-- Find customers who have never placed an order:
+SELECT c.id, c.name
+FROM customers c
+LEFT JOIN orders o ON c.id = o.customer_id
+WHERE o.id IS NULL;</pre>
+<p>Alternative pattern using <code>NOT EXISTS</code> (often equally performant or faster):</p>
+<pre>SELECT c.id, c.name FROM customers c
+WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id);</pre>`},
+
+                    {
+                        q: "What causes accidental Cartesian explosion in SQL queries?", d: "medium",
+                        a: `<p>A Cartesian explosion occurs when join conditions produce multiplicative row growth, exhausting server memory or CPU:</p>
+<ul>
+<li><strong>Missing Join Condition:</strong> Accidental syntax like <code>FROM users, orders</code> or forgetting the <code>ON</code> clause.</li>
+<li><strong>Joining Multiple One-to-Many Tables:</strong> Joining an order table to both order_items (5 items) and order_shipment_logs (4 logs) directly produces 20 duplicate row combinations per order.</li>
+</ul>
+<div class="key-point">Fix multi-branch aggregations by aggregating child tables independently in CTEs before joining them back to the parent record.</div>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 5. AGGREGATES, GROUPING & NULLS
+            // ═══════════════════════════════════════════
+            {
+                cat: "Aggregates, Grouping & NULLs", icon: "📈", color: "#f59e0b", questions: [
+                    {
+                        q: "Explain the subtle differences between COUNT(*), COUNT(1), and COUNT(column).", d: "easy",
+                        a: `<ul>
+<li><code>COUNT(*)</code> counts total rows in the set, including rows where all columns are NULL.</li>
+<li><code>COUNT(1)</code> evaluates constant literal 1 for each row. Modern optimizers treat <code>COUNT(1)</code> identical to <code>COUNT(*)</code>.</li>
+<li><code>COUNT(column)</code> inspects the specific column and counts <strong>only non-NULL values</strong>.</li>
+</ul>
+<pre>-- If column 'bonus' has values: [100, NULL, 500]:
+SELECT COUNT(*) FROM emp;     -- Returns 3
+SELECT COUNT(bonus) FROM emp; -- Returns 2 (skips NULL)</pre>`},
+
+                    {
+                        q: "How do aggregate functions like AVG and SUM handle NULL values?", d: "medium",
+                        a: `<p>All aggregate functions except <code>COUNT(*)</code> silently ignore NULL values.</p>
+<div class="key-point"><strong>The AVG Trap:</strong> If salaries are [100000, 80000, NULL], <code>AVG(salary)</code> divides 180000 by 2 (returning 90,000), NOT by 3! If NULL represents zero compensation, you must explicitly wrap it: <code>AVG(COALESCE(salary, 0))</code> which divides by 3 (returning 60,000).</div>`},
+
+                    {
+                        q: "Why does SQL use Three-Valued Logic (TRUE, FALSE, UNKNOWN)?", d: "medium",
+                        a: `<p>Because NULL represents an missing or unknown value, comparing anything to NULL yields <code>UNKNOWN</code>.</p>
+<pre>NULL = NULL  --> UNKNOWN (we don't know if two unknowns are equal)
+NULL != NULL --> UNKNOWN</pre>
+<p>If a boolean condition in a <code>WHERE</code> clause evaluates to <code>UNKNOWN</code>, SQL discards the row. Always use explicit boolean predicates: <code>IS NULL</code> or <code>IS NOT NULL</code>.</p>`},
+
+                    {
+                        q: "Compare COALESCE vs NULLIF vs NVL/IFNULL.", d: "medium",
+                        a: `<ul>
+<li><code>COALESCE(val1, val2, ...)</code>: ANSI SQL standard. Evaluates arguments left-to-right and returns the first non-NULL value.</li>
+<li><code>NULLIF(val1, val2)</code>: Returns NULL if both values are equal; otherwise returns val1. Excellent for preventing division by zero errors: <code>total / NULLIF(count, 0)</code>.</li>
+<li><code>IFNULL / NVL</code>: Vendor-specific 2-argument fallbacks (MySQL / Oracle). Prefer standard <code>COALESCE</code>.</li>
+</ul>`},
+
+                    {
+                        q: "What are GROUPING SETS, ROLLUP, and CUBE?", d: "hard",
+                        a: `<p>Advanced aggregation extensions that calculate multi-level subtotals in a single table scan:</p>
+<ul>
+<li><code>ROLLUP (dept, role)</code>: Generates hierarchical subtotals (by dept+role, by dept alone, and grand total).</li>
+<li><code>CUBE (dept, role)</code>: Generates all possible subtotal combinations across all specified dimensions.</li>
+<li><code>GROUPING SETS ((dept), (role))</code>: Lets you explicitly list exact subtotal groupings desired.</li>
+</ul>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 6. SUBQUERIES & CTEs
+            // ═══════════════════════════════════════════
+            {
+                cat: "Subqueries & CTEs", icon: "🏗️", color: "#ec4899", questions: [
+                    {
+                        q: "What is the difference between correlated and non-correlated subqueries?", d: "medium",
+                        a: `<table class="cmp">
+<tr><th>Feature</th><th>Non-Correlated Subquery</th><th>Correlated Subquery</th></tr>
+<tr><td><strong>Dependency</strong></td><td>Self-contained; does not reference outer query.</td><td>References columns from the outer query table.</td></tr>
+<tr><td><strong>Execution</strong></td><td>Executes exactly once before outer query runs.</td><td>Executes repeatedly once for every outer row evaluated.</td></tr>
+<tr><td><strong>Performance</strong></td><td>Fast; result set cached in memory.</td><td>Potential O(N²) slowdown if unindexed.</td></tr>
+</table>
+<pre>-- Correlated example (Find employees earning more than their dept avg):
+SELECT e.name, e.salary FROM employees e
+WHERE salary > (
+    SELECT AVG(salary) FROM employees e2 WHERE e2.dept_id = e.dept_id
+);</pre>`},
+
+                    {
+                        q: "Why and when should you use a Common Table Expression (CTE) over subqueries?", d: "medium",
+                        a: `<p>Defined via the <code>WITH</code> clause, CTEs structure modular subqueries before the main statement:</p>
+<ul>
+<li><strong>Readability & Debugging:</strong> Breaks 100-line nested subqueries into readable, top-down logical blocks.</li>
+<li><strong>Reusability:</strong> A CTE can be referenced multiple times within the same execution query block.</li>
+<li><strong>Recursion:</strong> CTEs are the only standard SQL mechanism for recursive graph or tree traversal.</li>
+</ul>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"I treat CTEs like clean functional variables in programming. When writing complex analytical transformations, organizing data staging into sequential CTE blocks makes code review effortless and self-documenting."</p></div>`},
+
+                    {
+                        q: "Explain Recursive CTE anatomy with a hierarchical Org Chart example.", d: "hard",
+                        a: `<p>A recursive CTE contains an <strong>Anchor Member</strong> (base case) joined via <code>UNION ALL</code> to a <strong>Recursive Member</strong> that references the CTE itself:</p>
+<pre>WITH RECURSIVE org_chart AS (
+    -- 1. Anchor: Select top-level CEO (manager is null)
+    SELECT id, name, 1 AS level, name AS path
+    FROM employees WHERE manager_id IS NULL
+    
+    UNION ALL
+    
+    -- 2. Recursive: Join reports to their managers in org_chart
+    SELECT e.id, e.name, oc.level + 1, oc.path || ' -> ' || e.name
+    FROM employees e JOIN org_chart oc ON e.manager_id = oc.id
+)
+SELECT * FROM org_chart ORDER BY level, name;</pre>`},
+
+                    {
+                        q: "In PostgreSQL, what is the difference between materialized and non-materialized CTEs?", d: "hard",
+                        a: `<p>Prior to PG 12, CTEs were always evaluated independently as optimization fences (materialized into temp structures). Modern PostgreSQL folds non-recursive CTEs into the main query plan automatically so indexes and filters push down.</p>
+<p>You can override this explicitly using keywords:</p>
+<pre>WITH heavy_calc AS MATERIALIZED (SELECT ...) -- Forces single caching calculation
+WITH simple_view AS NOT MATERIALIZED (SELECT ...) -- Forces inline macro expansion</pre>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 7. WINDOW FUNCTIONS
+            // ═══════════════════════════════════════════
+            {
+                cat: "Window Functions", icon: "🪟", color: "#ef4444", questions: [
+                    {
+                        q: "What is a window function? How does it differ from GROUP BY?", d: "medium",
+                        a: `<p>Window functions perform aggregations across a sliding window of related rows <strong>without collapsing individual output rows</strong>.</p>
+<pre>-- GROUP BY collapses rows into 1 summary line per department:
+SELECT dept_id, AVG(salary) FROM employees GROUP BY dept_id;
+
+-- Window function maintains individual rows while adding group metrics:
+SELECT name, dept_id, salary,
+       AVG(salary) OVER (PARTITION BY dept_id) AS dept_avg
+FROM employees;</pre>`},
+
+                    {
+                        q: "Compare ROW_NUMBER(), RANK(), and DENSE_RANK().", d: "medium",
+                        a: `<pre>Scores: [100, 90, 90, 80]
+
+ROW_NUMBER(): [1, 2, 3, 4] -- Always sequential numbers; tie order arbitrary.
+RANK():       [1, 2, 2, 4] -- Ties share rank; skips subsequent rank numbers!
+DENSE_RANK(): [1, 2, 2, 3] -- Ties share rank; NO numeric gaps exist!</pre>
+<div class="key-point"><strong>Pattern: Top N per Category:</strong> Use <code>DENSE_RANK() OVER (PARTITION BY category ORDER BY sales DESC)</code> inside a subquery/CTE, then filter where <code>rank <= 3</code>.</div>`},
+
+                    {
+                        q: "Explain LAG() and LEAD(). How do you calculate time-series growth rates?", d: "medium",
+                        a: `<p><code>LAG(col, N, default)</code> accesses values N rows behind the current row. <code>LEAD()</code> accesses N rows ahead.</p>
+<pre>-- Calculate Month-over-Month (MoM) revenue growth:
+SELECT month, revenue,
+       LAG(revenue, 1) OVER (ORDER BY month) AS prev_month,
+       ROUND((revenue - LAG(revenue, 1) OVER (ORDER BY month)) * 100.0 /
+             NULLIF(LAG(revenue, 1) OVER (ORDER BY month), 0), 2) AS growth_pct
+FROM monthly_sales;</pre>`},
+
+                    {
+                        q: "Explain Window Frame clauses (ROWS vs RANGE BETWEEN). What is the LAST_VALUE trap?", d: "hard",
+                        a: `<p>Window frames restrict which rows inside the partition are evaluated for running calculations:</p>
+<pre>SUM(val) OVER (ORDER BY date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)</pre>
+<ul>
+<li><code>ROWS</code> bounds by physical row offset count.</li>
+<li><code>RANGE</code> bounds by logical value equality (groups duplicates together).</li>
+</ul>
+<div class="key-point"><strong>The LAST_VALUE Trap:</strong> By default, an ORDER BY inside a window clause sets the frame to <code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>. Thus, calling <code>LAST_VALUE(val)</code> evaluates only up to the current row! To get the true last partition value, explicitly specify: <code>ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING</code>.</div>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 8. VIEWS & INDEXING OPTIMIZATION
+            // ═══════════════════════════════════════════
+            {
+                cat: "Views & Indexing Optimization", icon: "⚡", color: "#4f46e5", questions: [
+                    {
+                        q: "Compare Standard Views vs Materialized Views.", d: "medium",
+                        a: `<table class="cmp">
+<tr><th>Feature</th><th>Standard View</th><th>Materialized View</th></tr>
+<tr><td><strong>Physical Storage</strong></td><td>Virtual query definition saved in catalog; no disk space used.</td><td>Results physically written and cached on disk pages.</td></tr>
+<tr><td><strong>Execution Speed</strong></td><td>Re-runs underlying query live on every access.</td><td>Instant lookup from disk snapshot (blazing fast).</td></tr>
+<tr><td><strong>Data Freshness</strong></td><td>100% real-time data accuracy.</td><td>Data snapshot is stale until explicitly refreshed (<code>REFRESH MATERIALIZED VIEW</code>).</td></tr>
+</table>`},
+
+                    {
+                        q: "How does a B-Tree index work internally? Why does it speed up queries?", d: "medium",
+                        a: `<p>A <strong>Balanced Tree (B-Tree)</strong> index maintains sorted key values pointing directly to physical table rows or heap page identifiers.</p>
+<p>Without an index, finding a record requires scanning every table page O(N). A B-tree organizes keys hierarchically so the database navigates root nodes to leaf nodes via binary search in O(log N) operations (typically 3 to 4 disk jumps for millions of rows).</p>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"I explain indexing like the alphabetical index at the back of a textbook. Instead of reading 1,000 pages to find a term, the index directs you instantly to page 412. However, every table write forces B-tree rebalancing, which is why we balance read speed against write overhead."</p></div>`},
+
+                    {
+                        q: "Explain the Leftmost Prefix Rule for Composite Indexes.", d: "hard",
+                        a: `<p>A composite index created on <code>(department_id, last_name, age)</code> concatenates sort keys hierarchically left-to-right.</p>
+<pre>-- ✅ Index utilized effectively:
+WHERE department_id = 5
+WHERE department_id = 5 AND last_name = 'Smith'
+
+-- ❌ Index ignored (cannot skip leading prefix):
+WHERE last_name = 'Smith' AND age = 30</pre>
+<div class="key-point">Put columns tested for exact equality first in composite index declarations, followed by columns filtered by range comparisons (<code>></code>, <code>BETWEEN</code>).</div>`},
+
+                    {
+                        q: "What is a Covering Index (Index-Only Scan)?", d: "hard",
+                        a: `<p>A query experiences a <strong>Covering Index / Index-Only Scan</strong> when every single column requested in both the <code>SELECT</code> projection and <code>WHERE</code> clause exists entirely within the index leaf nodes.</p>
+<pre>CREATE INDEX idx_cover ON orders(customer_id, status, total_amount);
+SELECT total_amount FROM orders WHERE customer_id = 42 AND status = 'paid';</pre>
+<p>The database answers the query directly from the B-tree memory pages without performing random I/O heap lookups to fetch underlying table rows.</p>`},
+
+                    {
+                        q: "Compare Clustered vs Non-Clustered Indexes.", d: "hard",
+                        a: `<ul>
+<li><strong>Clustered Index:</strong> Dictates the physical ordering of data rows on disk. The leaf nodes <em>are</em> the actual table data pages. A table can have only <strong>ONE</strong> clustered index (usually the primary key).</li>
+<li><strong>Non-Clustered Index:</strong> A separate B-tree structure containing the indexed columns and pointer keys referencing the underlying clustered table rows. A table can have many non-clustered indexes.</li>
+</ul>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 9. TRANSACTIONS, CONCURRENCY & LOCKING
+            // ═══════════════════════════════════════════
+            {
+                cat: "Transactions, Concurrency & Locking", icon: "🔐", color: "#10b981", questions: [
+                    {
+                        q: "Explain the ACID transaction properties with a banking transfer example.", d: "medium",
+                        a: `<table class="cmp">
+<tr><th>Property</th><th>Definition</th><th>Banking Example ($500 transfer A -> B)</th></tr>
+<tr><td><strong>Atomicity</strong></td><td>All transaction statements succeed, or everything rolls back.</td><td>If credit to B succeeds but debit from A fails, credit is cancelled.</td></tr>
+<tr><td><strong>Consistency</strong></td><td>Database rules, checks, and invariants are preserved across states.</td><td>Total ledger balance across accounts remains unchanged before and after.</td></tr>
+<tr><td><strong>Isolation</strong></td><td>Concurrent transactions run without corrupting mid-flight state.</td><td>Two simultaneous transfers won't overwrite balances or double-spend.</td></tr>
+<tr><td><strong>Durability</strong></td><td>Committed changes survive power outages or server crashes.</td><td>Once committed to WAL disk logs, the transfer is permanently recorded.</td></tr>
+</table>`},
+
+                    {
+                        q: "Define Dirty Reads, Non-Repeatable Reads, and Phantom Reads.", d: "hard",
+                        a: `<ul>
+<li><strong>Dirty Read:</strong> Transaction A reads uncommitted modifications written by concurrent Transaction B. If B rolls back, A processed phantom data.</li>
+<li><strong>Non-Repeatable Read:</strong> Transaction A reads a row twice inside one transaction. Concurrent Transaction B updates and commits that row in between, causing A to see two different values.</li>
+<li><strong>Phantom Read:</strong> Transaction A runs a range query twice. Concurrent Transaction B inserts new records matching that range criteria, causing A to see new "phantom" rows on the second scan.</li>
+</ul>`},
+
+                    {
+                        q: "Compare the 4 ANSI SQL Isolation Levels.", d: "hard",
+                        a: `<table class="cmp">
+<tr><th>Isolation Level</th><th>Dirty Read</th><th>Non-Repeatable Read</th><th>Phantom Read</th><th>Concurrency / Speed</th></tr>
+<tr><td><strong>READ UNCOMMITTED</strong></td><td>Possible ❌</td><td>Possible ❌</td><td>Possible ❌</td><td>Highest speed / risk</td></tr>
+<tr><td><strong>READ COMMITTED</strong> (PG/Oracle default)</td><td>Prevented ✅</td><td>Possible ❌</td><td>Possible ❌</td><td>Balanced standard</td></tr>
+<tr><td><strong>REPEATABLE READ</strong> (MySQL default)</td><td>Prevented ✅</td><td>Prevented ✅</td><td>Possible ❌</td><td>High consistency</td></tr>
+<tr><td><strong>SERIALIZABLE</strong></td><td>Prevented ✅</td><td>Prevented ✅</td><td>Prevented ✅</td><td>Strict; potential serialization failures</td></tr>
+</table>`},
+
+                    {
+                        q: "What is a Deadlock? How do database engines resolve and prevent them?", d: "hard",
+                        a: `<p>A <strong>Deadlock</strong> occurs when two transactions hold locks each other needs, forming an unbreakable circular wait:</p>
+<pre>Tx A: Locks Row 1 --> Waits for Row 2
+Tx B: Locks Row 2 --> Waits for Row 1 (DEADLOCK!)</pre>
+<p><strong>Resolution:</strong> The engine deadlock detector identifies circular chains, automatically aborts (rolls back) one transaction (the "victim"), and throws an exception so the application can retry.</p>
+<p><strong>Prevention Strategies:</strong></p>
+<ul>
+<li>Enforce uniform lock ordering across all application microservices (always update Row 1 before Row 2).</li>
+<li>Keep transactions short and concise.</li>
+<li>Use optimistic concurrency or explicitly set lock statement timeouts.</li>
+</ul>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 10. NORMALIZATION & SCHEMA DESIGN
+            // ═══════════════════════════════════════════
+            {
+                cat: "Normalization & Schema Design", icon: "📐", color: "#f59e0b", questions: [
+                    {
+                        q: "Explain 1NF, 2NF, and 3NF with concrete examples.", d: "medium",
+                        a: `<h4>1NF (First Normal Form) — Atomic Values</h4>
+<p>No repeating groups or comma-separated lists in cells. Each row must have a unique primary key identifier.</p>
+<pre>❌ | id | name  | tags              |
+   | 1  | Alice | "sql,python,node" | -- Non-atomic!
+
+✅ Break tags into separate normalized junction rows.</pre>
+
+<h4>2NF — No Partial Dependencies</h4>
+<p>Applies to composite primary keys. Every non-key column must depend on the <em>entire</em> composite primary key, not just part of it.</p>
+<pre>❌ Table: enrollments (student_id, course_id, student_name, grade)
+-- student_name depends only on student_id! Move student_name to students table.</pre>
+
+<h4>3NF — No Transitive Dependencies</h4>
+<p>Non-key columns cannot depend on other non-key columns ("Everything depends on the key, the whole key, and nothing but the key").</p>
+<pre>❌ Table: employees (id, name, dept_id, dept_location)
+-- dept_location depends on dept_id. Move location to departments table.</pre>`},
+
+                    {
+                        q: "When and why should you intentionally Denormalize a database schema?", d: "hard",
+                        a: `<p>Denormalization deliberately introduces controlled redundancy to optimize <strong>read query performance</strong> in analytical or read-heavy systems.</p>
+<h4>Scenarios for Denormalization:</h4>
+<ul>
+<li><strong>Star/Snowflake Schemas (Data Warehouses):</strong> Flattening joins so analytical reporting dashboards run over billions of rows without 10-table joins.</li>
+<li><strong>Caching Aggregates:</strong> Storing a pre-computed <code>comment_count</code> on a blog post row rather than executing <code>COUNT(*)</code> on every page load.</li>
+<li><strong>Audit History Preservation:</strong> Storing exact customer shipping address text on the historical order row so future address modifications don't alter past invoices.</li>
+</ul>
+<div class="key-point">Always normalize to 3NF first during initial domain modeling. Only denormalize when measured read bottlenecks justify the added write synchronization complexity.</div>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 11. ADVANCED SENIOR TOPICS (PARTITIONING, MVCC, JSON)
+            // ═══════════════════════════════════════════
+            {
+                cat: "Advanced Senior Topics", icon: "🚀", color: "#22d3ee", questions: [
+                    {
+                        q: "What is Table Partitioning? Compare Range, List, and Hash partitioning.", d: "hard",
+                        a: `<p>Partitioning splits large physical tables into smaller manageable child tables across disk files while presenting a unified table interface to queries.</p>
+<ul>
+<li><strong>Range Partitioning:</strong> Divided by continuous intervals (e.g., partitioned by timestamp into monthly tables: <code>orders_2026_01</code>, <code>orders_2026_02</code>).</li>
+<li><strong>List Partitioning:</strong> Divided by explicit categorical lists (e.g., partitioned by country: <code>users_usa</code>, <code>users_emea</code>).</li>
+<li><strong>Hash Partitioning:</strong> Distributed across N buckets using a hash function on the partition key to evenly balance write loads.</li>
+</ul>
+<div class="key-point"><strong>Partition Pruning:</strong> When queries filter by the partition key (<code>WHERE order_date >= '2026-06-01'</code>), the optimizer skips scanning irrelevant physical partitions entirely.</div>`},
+
+                    {
+                        q: "What is MVCC (Multi-Version Concurrency Control)? How does it prevent read blocking?", d: "hard",
+                        a: `<p><strong>MVCC</strong> allows databases to handle high concurrency where <strong>readers never block writers, and writers never block readers</strong>.</p>
+<p>When a transaction updates a row, the engine does not immediately overwrite the existing data. Instead, it writes a new versioned copy of the row stamped with transaction IDs (<code>xmin</code>/<code>xmax</code>).</p>
+<p>Concurrent readers view a consistent historical snapshot of rows valid at their transaction start time. Older dead row versions are periodically cleaned up by background garbage collection (Vacuuming in PostgreSQL).</p>`},
+
+                    {
+                        q: "How do you query and index JSON/JSONB semi-structured data in PostgreSQL?", d: "hard",
+                        a: `<p>PostgreSQL's binary <code>JSONB</code> type stores validated JSON documents allowing native indexing and querying:</p>
+<pre>-- Extract JSON field as text (->> operator):
+SELECT metadata->>'tier' FROM users WHERE metadata->>'tier' = 'enterprise';
+
+-- Query nested arrays using containment operator (@>):
+SELECT * FROM products WHERE attributes @> '{"color": "midnight_blue"}';
+
+-- Create inverted GIN index for instant JSON queries:
+CREATE INDEX idx_products_attr ON products USING GIN (attributes);</pre>`},
+
+                    {
+                        q: "What is Row-Level Security (RLS) and how does it enforce tenant isolation?", d: "hard",
+                        a: `<p>RLS applies security policy filters at the database engine level so user queries transparently return only authorized rows:</p>
+<pre>ALTER TABLE tenant_orders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_policy ON tenant_orders
+USING (tenant_id = current_setting('app.current_tenant_id')::uuid);</pre>
+<p>Even if application backend code executes <code>SELECT * FROM tenant_orders</code>, the engine injects the RLS predicate automatically, preventing accidental cross-tenant data leaks.</p>`},
+
+                    {
+                        q: "Explain Write-Ahead Logging (WAL) and Point-In-Time Recovery (PITR).", d: "hard",
+                        a: `<p><strong>Write-Ahead Logging (WAL):</strong> To ensure ACID durability without flushing random heap pages to disk on every commit, the engine sequentially appends all data modifications to sequential WAL files first. If power fails, the engine replays the sequential WAL during startup to recover lost memory pages.</p>
+<p><strong>Point-In-Time Recovery (PITR):</strong> By taking weekly base disk snapshots and archiving continuous stream WAL logs, administrators can restore a database exact state to any specific second in history prior to catastrophic user error (e.g., accidental table drop).</p>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 12. PERFORMANCE TUNING & DIAGNOSTICS
+            // ═══════════════════════════════════════════
+            {
+                cat: "Performance Tuning & Diagnostics", icon: "⚡", color: "#ef4444", questions: [
+                    {
+                        q: "What steps do you take when diagnosing a slow production SQL query?", d: "hard",
+                        a: `<h4>My 6-Step Optimization Framework:</h4>
+<ol>
+<li><strong>Examine Query Plan (EXPLAIN ANALYZE):</strong> Inspect actual execution timing, row count discrepancies, and look for Sequential Scans on large tables.</li>
+<li><strong>Verify Index Utilization:</strong> Ensure join conditions and SARGable filter predicates utilize appropriate B-tree or covering composite indexes.</li>
+<li><strong>Eliminate Unnecessary Projections:</strong> Remove <code>SELECT *</code> to enable index-only scans and reduce network memory overhead.</li>
+<li><strong>Rewrite Correlated Subqueries:</strong> Convert row-by-row subqueries into set-based <code>JOIN</code> operations or window aggregations.</li>
+<li><strong>Inspect Table Statistics:</strong> Run <code>ANALYZE</code> to refresh stale catalog histograms if the optimizer miscalculates join row estimates.</li>
+<li><strong>Check Lock Contention:</strong> Verify if queries are stalling waiting for row locks or blocking transactions.</li>
+</ol>
+<div class="recruiter-tip"><h5>How to Present This</h5><p>"I emphasize a systematic, data-driven methodology starting with EXPLAIN ANALYZE. In one production investigation, identifying a mismatch between estimated rows (10) and actual rows (1.5M) led us to run ANALYZE, immediately correcting the query plan from a 45-second nested loop to a 120ms hash join."</p></div>`},
+
+                    {
+                        q: "What makes a WHERE clause predicate SARGable (Search Argument Able)?", d: "hard",
+                        a: `<p>A predicate is <strong>SARGable</strong> if the query engine can utilize a B-tree index to seek directly to matching rows. Wrapping indexed columns inside functions or math operations breaks SARGability, forcing full index scans:</p>
+<pre>-- ❌ Non-SARGable (wrapped column prevents index lookup):
+WHERE YEAR(created_at) = 2026
+WHERE salary * 1.1 > 100000
+
+-- ✅ SARGable (column isolated on left side of comparison):
+WHERE created_at >= '2026-01-01' AND created_at < '2027-01-01'
+WHERE salary > 100000 / 1.1</pre>`},
+
+                    {
+                        q: "What is the N+1 Query Problem in ORMs? How do you solve it?", d: "medium",
+                        a: `<p>The N+1 problem occurs when an application executes 1 initial query to fetch N parent records, then runs N additional queries inside a loop to fetch related child data:</p>
+<pre>-- 1 query fetches 50 users:
+SELECT * FROM users LIMIT 50;
+-- 50 subsequent queries executed sequentially in app loop:
+SELECT * FROM orders WHERE user_id = 1; ... SELECT * FROM orders WHERE user_id = 50;</pre>
+<p><strong>Solution:</strong> Use eager loading via SQL joins or batching (e.g., Django's <code>prefetch_related</code> / JPA's <code>JOIN FETCH</code>):</p>
+<pre>SELECT * FROM orders WHERE user_id IN (1, 2, 3, ..., 50); -- Resolved in 2 queries total!</pre>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 13. PRACTICAL SCENARIOS & CODING CHALLENGES
+            // ═══════════════════════════════════════════
+            {
+                cat: "Practical Coding Challenges", icon: "💻", color: "#34d399", questions: [
+                    {
+                        q: "Write a query to find employees earning more than their direct managers.", d: "medium",
+                        a: `<pre>SELECT e.name AS employee_name, e.salary AS emp_salary,
+       m.name AS manager_name, m.salary AS mgr_salary
+FROM employees e
+JOIN employees m ON e.manager_id = m.id
+WHERE e.salary > m.salary;</pre>`},
+
+                    {
+                        q: "Find the Nth highest salary without using LIMIT or OFFSET.", d: "hard",
+                        a: `<pre>-- Using DENSE_RANK() window function (Recommended):
+WITH ranked_salaries AS (
+    SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS rank_num
+    FROM employees
+)
+SELECT DISTINCT salary FROM ranked_salaries WHERE rank_num = 3;
+
+-- Using correlated subquery counting distinct earners:
+SELECT DISTINCT e1.salary FROM employees e1
+WHERE 3 = (
+    SELECT COUNT(DISTINCT e2.salary) 
+    FROM employees e2 WHERE e2.salary >= e1.salary
+);</pre>`},
+
+                    {
+                        q: "Write a query to find and delete duplicate records while keeping the lowest ID.", d: "medium",
+                        a: `<pre>-- 1. Identify duplicates:
+SELECT email, COUNT(*) FROM users GROUP BY email HAVING COUNT(*) > 1;
+
+-- 2. Delete duplicates keeping lowest ID using ROW_NUMBER():
+DELETE FROM users
+WHERE id IN (
+    SELECT id FROM (
+        SELECT id, ROW_NUMBER() OVER (PARTITION BY email ORDER BY id ASC) AS rn
+        FROM users
+    ) t WHERE rn > 1
+);</pre>`},
+
+                    {
+                        q: "Implement high-performance Keyset (Cursor) Pagination for 10M rows.", d: "hard",
+                        a: `<p>Standard <code>OFFSET 500000</code> forces the engine to read and discard 500,000 rows. Keyset pagination uses indexed columns to jump directly to the target row:</p>
+<pre>-- Page 1:
+SELECT id, name, created_at FROM events ORDER BY id ASC LIMIT 20;
+
+-- Page 2 (Client passes last seen ID 20 as cursor parameter):
+SELECT id, name, created_at FROM events 
+WHERE id > 20 
+ORDER BY id ASC LIMIT 20;</pre>
+<p>Execution time remains constant O(log N) regardless of how deep into the dataset the user navigates.</p>`},
+
+                    {
+                        q: "Write a query to pivot row data into summary columns (Conditional Aggregation).", d: "hard",
+                        a: `<pre>-- Convert quarterly sales rows into horizontal department columns:
+SELECT department,
+       SUM(CASE WHEN quarter = 'Q1' THEN revenue ELSE 0 END) AS Q1_Rev,
+       SUM(CASE WHEN quarter = 'Q2' THEN revenue ELSE 0 END) AS Q2_Rev,
+       SUM(CASE WHEN quarter = 'Q3' THEN revenue ELSE 0 END) AS Q3_Rev,
+       SUM(CASE WHEN quarter = 'Q4' THEN revenue ELSE 0 END) AS Q4_Rev
+FROM quarterly_sales
+GROUP BY department;</pre>`},
+
+                    {
+                        q: "Solve Relational Division: Find customers who bought EVERY product in catalog.", d: "hard",
+                        a: `<pre>-- Compare distinct products ordered per customer against total product count:
+SELECT c.id, c.name
+FROM customers c
+JOIN orders o ON c.id = o.customer_id
+GROUP BY c.id, c.name
+HAVING COUNT(DISTINCT o.product_id) = (SELECT COUNT(*) FROM products);</pre>`},
+
+                    {
+                        q: "Find continuous date islands/gaps in user login history.", d: "hard",
+                        a: `<pre>-- Grouping consecutive dates using date arithmetic difference pattern:
+WITH numbered_dates AS (
+    SELECT user_id, login_date,
+           JULIANDAY(login_date) - ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date) AS grp
+    FROM user_logins
+)
+SELECT user_id, MIN(login_date) AS streak_start, MAX(login_date) AS streak_end,
+       COUNT(*) AS streak_days
+FROM numbered_dates
+GROUP BY user_id, grp
+ORDER BY streak_days DESC;</pre>`}
+                ]
+            },
+
+            // ═══════════════════════════════════════════
+            // 14. BEHAVIORAL & RECRUITER STRATEGIES
+            // ═══════════════════════════════════════════
+            {
+                cat: "Behavioral & Recruiter Strategies", icon: "🎤", color: "#f472b6", questions: [
+                    {
+                        q: "How do you communicate technical database decisions to non-technical recruiters?", d: "easy",
+                        a: `<p>Focus on business outcomes (speed, reliability, cost reduction) rather than syntax jargon:</p>
+<ul>
+<li>Instead of saying <em>"I added a covering B-tree composite index to eliminate heap lookups"</em>...</li>
+<li>Say: <strong>"I optimized our core search query, reducing page loading times from 8 seconds to 100 milliseconds, which directly improved customer checkout conversion."</strong></li>
+</ul>
+<div class="recruiter-tip"><h5>Recruiter Communication Tip</h5><p>"Recruiters evaluate problem ownership and business impact. Use the STAR method (Situation, Task, Action, Result) to frame database optimization stories around measurable user improvements or cloud cost savings."</p></div>`},
+
+                    {
+                        q: "How do you handle disagreements on database schema design during code reviews?", d: "medium",
+                        a: `<p>Ground design discussions in objective trade-offs rather than subjective preferences:</p>
+<ol>
+<li>Evaluate access patterns: Are reads outnumbering writes 100 to 1?</li>
+<li>Prototype query benchmarks: Compare execution plans for normalized vs denormalized proposals.</li>
+<li>Assess future schema evolution: Which structure accommodates upcoming roadmap requirements with simpler migrations?</li>
+</ol>`}
+                ]
+            }
+        ];
+
+        // ──────────────────────────────────────────
+        // RENDERING ENGINE
+        // ──────────────────────────────────────────
+        let currentFilter = 'all';
+
+        function render() {
+            const container = document.getElementById('questionsContainer');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            let html = '';
+            let visible = 0;
+            let questionNum = 0;
+
+            data.forEach(cat => {
+                const filteredQ = cat.questions.filter(q => {
+                    const matchesDiff = currentFilter === 'all' || q.d === currentFilter;
+                    const matchesSearch = !searchTerm || q.q.toLowerCase().includes(searchTerm) || q.a.toLowerCase().includes(searchTerm);
+                    return matchesDiff && matchesSearch;
+                });
+
+                if (filteredQ.length === 0) return;
+
+                html += `<div class="category">
+            <div class="category-header">
+                <div class="category-icon" style="background:${cat.color}15;color:${cat.color}">${cat.icon}</div>
+                <h2>${cat.cat}</h2>
+                <span class="count">${filteredQ.length} questions</span>
+            </div>`;
+
+                filteredQ.forEach(q => {
+                    questionNum++;
+                    visible++;
+                    html += `<div class="q-card" data-diff="${q.d}">
+                <div class="q-header" onclick="this.parentElement.classList.toggle('open')">
+                    <span class="q-num">${questionNum}</span>
+                    <span class="q-text">${q.q}</span>
+                    <div class="q-meta">
+                        <span class="q-diff ${q.d}">${q.d}</span>
+                        <span class="q-toggle">▼</span>
+                    </div>
+                </div>
+                <div class="q-answer">${q.a}</div>
+            </div>`;
+                });
+
+                html += '</div>';
+            });
+
+            container.innerHTML = html;
+            document.getElementById('visibleCount').textContent = `${visible} questions displayed`;
+        }
+
+        function setFilter(f, btn) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            render();
+        }
+
+        function filterQuestions() { render(); }
+        function expandAll() { document.querySelectorAll('.q-card').forEach(c => c.classList.add('open')); }
+        function collapseAll() { document.querySelectorAll('.q-card').forEach(c => c.classList.remove('open')); }
+
+        // Init
+        render();
+    </script>
+</body>
+
+</html>

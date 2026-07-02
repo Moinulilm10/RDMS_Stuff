@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Fundamentals - Handwritten Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Patrick+Hand&family=Kalam:wght@300;400;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+    --bg:#fffef9;--bg-alt:#faf8f0;--text:#2d2d2d;--text-light:#555;
+    --yellow:#fff3b0;--yellow-dark:#f0d000;
+    --green:#c8f7c5;--green-dark:#27ae60;
+    --blue:#b8d4f0;--blue-dark:#2980b9;
+    --pink:#f8c8dc;--pink-dark:#e84393;
+    --orange:#ffd8a8;--orange-dark:#e67e22;
+    --purple:#d5c8f0;--purple-dark:#8e44ad;
+    --red:#ffb3b3;--red-dark:#e74c3c;
+    --cyan:#b8eff0;--cyan-dark:#00b894;
+    --line-color:#e8e4d9;
+}
+@media print{
+    .no-print{display:none!important}
+    .page-break{page-break-after:always}
+    body{background:#fff!important}
+    .note-page{box-shadow:none!important;margin:0!important;border:none!important}
+}
+body{
+    font-family:'Kalam','Caveat','Patrick Hand',cursive;
+    background:#e8e4d9;color:var(--text);
+    line-height:1.8;font-size:18px;
+}
+
+/* Toolbar */
+.toolbar{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    background:rgba(45,45,45,.95);backdrop-filter:blur(10px);
+    padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
+    font-family:'Inter',sans-serif;color:#fff;
+}
+.toolbar h1{font-size:1rem;font-weight:600;display:flex;align-items:center;gap:8px}
+.toolbar-btns{display:flex;gap:10px}
+.toolbar-btn{
+    padding:8px 20px;border:1px solid rgba(255,255,255,.2);border-radius:8px;
+    background:rgba(255,255,255,.1);color:#fff;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:.85rem;font-weight:500;transition:all .2s;
+}
+.toolbar-btn:hover{background:rgba(255,255,255,.2)}
+.toolbar-btn.primary{background:#4f46e5;border-color:#4f46e5}
+.toolbar-btn.primary:hover{background:#4338ca}
+
+/* TOC */
+.toc-sidebar{
+    position:fixed;left:0;top:56px;bottom:0;width:260px;
+    background:#faf8f0;border-right:2px solid var(--line-color);
+    overflow-y:auto;padding:20px;z-index:50;font-family:'Inter',sans-serif;
+    font-size:.82rem;transition:transform .3s;
+}
+.toc-sidebar.hidden{transform:translateX(-100%)}
+.toc-sidebar h3{font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--yellow-dark)}
+.toc-link{display:block;padding:6px 10px;color:var(--text-light);text-decoration:none;border-radius:6px;transition:all .15s;margin-bottom:2px}
+.toc-link:hover{background:var(--yellow);color:var(--text)}
+.toc-chapter{font-weight:700;color:var(--text);margin-top:12px;font-size:.85rem}
+
+/* Main Content */
+.content{margin-left:260px;padding:76px 40px 60px;max-width:900px;margin-right:auto}
+.content.full{margin-left:0;max-width:850px;margin:0 auto;padding-top:76px}
+
+/* Note Pages */
+.note-page{
+    background:var(--bg);
+    background-image:repeating-linear-gradient(transparent,transparent 34px,var(--line-color) 34px,var(--line-color) 35px);
+    border:1px solid #d5d0c4;border-radius:4px;
+    padding:30px 40px 40px 70px;margin-bottom:40px;
+    box-shadow:2px 3px 12px rgba(0,0,0,.08);
+    position:relative;min-height:400px;
+}
+.note-page::before{
+    content:'';position:absolute;left:55px;top:0;bottom:0;width:2px;
+    background:#f0a0a0;opacity:.5;
+}
+
+/* Typography */
+h1.note-title{
+    font-family:'Caveat',cursive;font-size:2.8rem;font-weight:700;
+    color:var(--blue-dark);margin-bottom:8px;line-height:1.3;
+    border-bottom:3px solid var(--blue);padding-bottom:8px;
+}
+h2.section-title{
+    font-family:'Caveat',cursive;font-size:2rem;font-weight:700;
+    color:var(--purple-dark);margin:24px 0 12px;
+    display:inline-block;padding:2px 8px;
+    background:linear-gradient(transparent 60%,var(--purple) 60%);
+}
+h3.topic-title{
+    font-family:'Caveat',cursive;font-size:1.5rem;font-weight:600;
+    color:var(--red-dark);margin:20px 0 8px;
+}
+h4.sub-topic{
+    font-family:'Kalam',cursive;font-size:1.2rem;font-weight:700;
+    color:var(--green-dark);margin:16px 0 6px;
+}
+
+p{margin-bottom:12px}
+
+/* Highlights */
+.hl-yellow{background:var(--yellow);padding:1px 6px;border-radius:3px}
+.hl-green{background:var(--green);padding:1px 6px;border-radius:3px}
+.hl-blue{background:var(--blue);padding:1px 6px;border-radius:3px}
+.hl-pink{background:var(--pink);padding:1px 6px;border-radius:3px}
+.hl-orange{background:var(--orange);padding:1px 6px;border-radius:3px}
+.hl-purple{background:var(--purple);padding:1px 6px;border-radius:3px}
+.hl-red{background:var(--red);padding:1px 6px;border-radius:3px}
+.hl-cyan{background:var(--cyan);padding:1px 6px;border-radius:3px}
+
+/* Important box */
+.important-box{
+    border:2px dashed;border-radius:8px;padding:14px 18px;margin:16px 0;
+    position:relative;
+}
+.important-box.yellow{border-color:var(--yellow-dark);background:rgba(255,243,176,.3)}
+.important-box.green{border-color:var(--green-dark);background:rgba(200,247,197,.3)}
+.important-box.red{border-color:var(--red-dark);background:rgba(255,179,179,.3)}
+.important-box.blue{border-color:var(--blue-dark);background:rgba(184,212,240,.3)}
+.important-box.pink{border-color:var(--pink-dark);background:rgba(248,200,220,.3)}
+.star-label{
+    position:absolute;top:-12px;left:16px;background:var(--bg);
+    padding:0 8px;font-weight:700;font-size:.95rem;
+}
+
+/* Code blocks */
+.code-block{
+    font-family:'JetBrains Mono',monospace;font-size:.85rem;
+    background:#1e1e2e;color:#cdd6f4;
+    padding:16px 20px;border-radius:8px;margin:10px 0 16px;
+    line-height:1.6;overflow-x:auto;white-space:pre;
+    border-left:4px solid var(--blue-dark);
+}
+.code-inline{
+    font-family:'JetBrains Mono',monospace;font-size:.82rem;
+    background:#f0ece2;padding:2px 8px;border-radius:4px;color:var(--red-dark);
+}
+
+/* Comparison table */
+.compare-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.95rem}
+.compare-table th{background:var(--blue);padding:8px 12px;text-align:left;font-weight:700;border:2px solid var(--line-color)}
+.compare-table td{padding:8px 12px;border:2px solid var(--line-color)}
+.compare-table tr:nth-child(even) td{background:var(--bg-alt)}
+
+/* Bullet points */
+.note-list{margin:8px 0 16px 8px;list-style:none}
+.note-list li{padding:4px 0;position:relative;padding-left:24px}
+.note-list li::before{content:'→';position:absolute;left:0;color:var(--pink-dark);font-weight:700}
+.note-list.check li::before{content:'✓';color:var(--green-dark)}
+.note-list.cross li::before{content:'✗';color:var(--red-dark)}
+.note-list.star li::before{content:'★';color:var(--orange-dark)}
+
+/* Emoji markers */
+.marker{font-size:1.1em;margin-right:4px}
+
+/* Sticky notes */
+.sticky{
+    background:var(--yellow);padding:16px;border-radius:0 0 0 0;margin:16px 0;
+    transform:rotate(-0.5deg);box-shadow:2px 3px 8px rgba(0,0,0,.1);
+    border-bottom:3px solid rgba(0,0,0,.08);font-size:.95rem;
+}
+.sticky.green{background:var(--green);transform:rotate(0.5deg)}
+.sticky.pink{background:var(--pink);transform:rotate(-0.3deg)}
+.sticky.blue{background:var(--blue);transform:rotate(0.4deg)}
+.sticky.orange{background:var(--orange);transform:rotate(-0.6deg)}
+
+/* Diagram */
+.diagram{
+    text-align:center;font-family:'JetBrains Mono',monospace;
+    background:var(--bg-alt);border:2px solid var(--line-color);
+    border-radius:8px;padding:20px;margin:14px 0;font-size:.85rem;
+    white-space:pre;overflow-x:auto;line-height:1.5;
+}
+</style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div class="toolbar no-print">
+    <h1>📝 SQL Fundamentals Notes</h1>
+    <div class="toolbar-btns">
+        <button class="toolbar-btn" onclick="toggleTOC()">📑 Table of Contents</button>
+        <button class="toolbar-btn" onclick="changeFontSize(-1)">A-</button>
+        <button class="toolbar-btn" onclick="changeFontSize(1)">A+</button>
+        <button class="toolbar-btn primary" onclick="window.print()">🖨️ Print / Save PDF</button>
+    </div>
+</div>
+
+<!-- TOC Sidebar -->
+<nav class="toc-sidebar" id="tocSidebar">
+    <h3>📋 Table of Contents</h3>
+    <a class="toc-link toc-chapter" href="#ch1">1. Database Basics</a>
+    <a class="toc-link toc-chapter" href="#ch2">2. Data Types</a>
+    <a class="toc-link toc-chapter" href="#ch3">3. Constraints</a>
+    <a class="toc-link toc-chapter" href="#ch4">4. CRUD Operations</a>
+    <a class="toc-link toc-chapter" href="#ch5">5. Filtering (WHERE)</a>
+    <a class="toc-link toc-chapter" href="#ch6">6. Sorting & Pagination</a>
+    <a class="toc-link toc-chapter" href="#ch7">7. Aggregate Functions</a>
+    <a class="toc-link toc-chapter" href="#ch8">8. GROUP BY & HAVING</a>
+    <a class="toc-link toc-chapter" href="#ch9">9. NULL Handling</a>
+    <a class="toc-link toc-chapter" href="#ch10">10. Joins</a>
+    <a class="toc-link toc-chapter" href="#ch11">11. Set Operations</a>
+    <a class="toc-link toc-chapter" href="#ch12">12. Subqueries</a>
+    <a class="toc-link toc-chapter" href="#ch13">13. CTEs</a>
+    <a class="toc-link toc-chapter" href="#ch14">14. Window Functions</a>
+    <a class="toc-link toc-chapter" href="#ch15">15. CASE Expression</a>
+    <a class="toc-link toc-chapter" href="#ch16">16. Views</a>
+    <a class="toc-link toc-chapter" href="#ch17">17. Indexes</a>
+    <a class="toc-link toc-chapter" href="#ch18">18. Transactions & ACID</a>
+    <a class="toc-link toc-chapter" href="#ch19">19. Stored Procedures</a>
+    <a class="toc-link toc-chapter" href="#ch20">20. Triggers</a>
+    <a class="toc-link toc-chapter" href="#ch21">21. Normalization</a>
+    <a class="toc-link toc-chapter" href="#ch22">22. String & Date Functions</a>
+    <a class="toc-link toc-chapter" href="#ch23">23. Partitioning & Sharding</a>
+    <a class="toc-link toc-chapter" href="#ch24">24. Concurrency & MVCC</a>
+    <a class="toc-link toc-chapter" href="#ch25">25. JSON & NoSQL in SQL</a>
+    <a class="toc-link toc-chapter" href="#ch26">26. Security & RLS</a>
+    <a class="toc-link toc-chapter" href="#ch27">27. Backup & Replication</a>
+</nav>
+
+<!-- Notes Content -->
+<div class="content" id="mainContent">
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 1: DATABASE BASICS -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch1">
+<h1 class="note-title">📚 Chapter 1: Database Basics</h1>
+
+<h2 class="section-title">What is a Database?</h2>
+<p>A <span class="hl-yellow">database</span> is an organized collection of structured data, stored and accessed electronically. Think of it as a <span class="hl-green">super-powered spreadsheet</span> that can handle millions of records!</p>
+
+<h3 class="topic-title">RDBMS (Relational Database Management System)</h3>
+<p>An <span class="hl-blue">RDBMS</span> stores data in <span class="hl-yellow">tables</span> (rows & columns), connected by <span class="hl-pink">relationships</span> (foreign keys).</p>
+
+<div class="important-box yellow">
+<span class="star-label">⭐ Key Concept</span>
+<p><strong>Popular RDBMS:</strong> PostgreSQL 🐘, MySQL 🐬, SQL Server, Oracle, SQLite</p>
+<p><strong>Key Feature:</strong> Data is organized into <span class="hl-green">tables</span> with <span class="hl-blue">rows</span> (records) and <span class="hl-pink">columns</span> (attributes)</p>
+</div>
+
+<h3 class="topic-title">SQL vs NoSQL</h3>
+<table class="compare-table">
+<tr><th>Feature</th><th>SQL (Relational)</th><th>NoSQL</th></tr>
+<tr><td><span class="hl-yellow">Schema</span></td><td>Fixed, predefined</td><td>Dynamic, flexible</td></tr>
+<tr><td><span class="hl-green">Scaling</span></td><td>Vertical (bigger server)</td><td>Horizontal (more servers)</td></tr>
+<tr><td><span class="hl-blue">Transactions</span></td><td>Full ACID support</td><td>Eventually consistent</td></tr>
+<tr><td><span class="hl-pink">Joins</span></td><td>Native JOIN support</td><td>Manual / Denormalized</td></tr>
+<tr><td><span class="hl-orange">Best For</span></td><td>Complex queries, relationships</td><td>Flexible data, high throughput</td></tr>
+</table>
+
+<div class="sticky green">
+<strong>💡 Rule of Thumb:</strong> If your data has relationships and you need consistency → SQL. If you need flexibility and massive scale → NoSQL. Many systems use BOTH!
+</div>
+
+<h3 class="topic-title">Architecture Hierarchy</h3>
+<div class="diagram">Server (Hardware/VM)
+ └── Instance (Running DB process)
+      ├── Database: ecommerce
+      │    ├── Schema: public
+      │    │    ├── Table: users      ← rows & columns
+      │    │    ├── Table: orders
+      │    │    └── Table: products
+      │    └── Schema: analytics
+      └── Database: blog</div>
+
+<h4 class="sub-topic">Key Terms</h4>
+<ul class="note-list star">
+<li><span class="hl-yellow">Table</span> — Collection of related data in rows & columns</li>
+<li><span class="hl-green">Row (Tuple)</span> — A single record (one employee, one order)</li>
+<li><span class="hl-blue">Column (Attribute)</span> — A specific field (name, salary, email)</li>
+<li><span class="hl-pink">Schema</span> — Logical namespace grouping related objects</li>
+<li><span class="hl-orange">Metadata</span> — Data about data (column types, indexes, stats)</li>
+</ul>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 2: DATA TYPES -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch2">
+<h1 class="note-title">🔢 Chapter 2: Data Types</h1>
+
+<h2 class="section-title">Numeric Types</h2>
+<table class="compare-table">
+<tr><th>Type</th><th>Storage</th><th>Range</th><th>Use Case</th></tr>
+<tr><td><span class="hl-blue">SMALLINT</span></td><td>2 bytes</td><td>-32K to 32K</td><td>Age, small counts</td></tr>
+<tr><td><span class="hl-green">INTEGER</span></td><td>4 bytes</td><td>-2.1B to 2.1B</td><td>Primary keys, quantities</td></tr>
+<tr><td><span class="hl-purple">BIGINT</span></td><td>8 bytes</td><td>±9.2 × 10¹⁸</td><td>Large IDs, big counts</td></tr>
+<tr><td><span class="hl-orange">DECIMAL(p,s)</span></td><td>Variable</td><td>Exact precision</td><td><strong>💰 MONEY</strong></td></tr>
+<tr><td><span class="hl-pink">FLOAT/REAL</span></td><td>4-8 bytes</td><td>Approximate</td><td>Scientific data</td></tr>
+</table>
+
+<div class="important-box red">
+<span class="star-label">🚨 CRITICAL</span>
+<p><strong>NEVER use FLOAT for money!</strong></p>
+<p><span class="code-inline">0.1 + 0.2 = 0.30000000000000004</span> — Rounding errors compound!</p>
+<p>Always use <span class="hl-green">DECIMAL(10,2)</span> or store cents as <span class="hl-blue">INTEGER</span></p>
+</div>
+
+<h2 class="section-title">String Types</h2>
+<table class="compare-table">
+<tr><th>Type</th><th>Behavior</th><th>Best For</th></tr>
+<tr><td><span class="hl-blue">CHAR(n)</span></td><td>Fixed-length, right-padded</td><td>Country codes: CHAR(2), zip codes</td></tr>
+<tr><td><span class="hl-green">VARCHAR(n)</span></td><td>Variable-length, up to n</td><td>Names, emails, titles ← <span class="hl-yellow">MOST USED</span></td></tr>
+<tr><td><span class="hl-pink">TEXT</span></td><td>Variable, unlimited</td><td>Blog posts, long descriptions</td></tr>
+</table>
+
+<h2 class="section-title">Date & Time Types</h2>
+<ul class="note-list">
+<li><span class="hl-yellow">DATE</span> — YYYY-MM-DD (birthdays, deadlines)</li>
+<li><span class="hl-green">TIME</span> — HH:MM:SS (schedules)</li>
+<li><span class="hl-blue">TIMESTAMP</span> — Date + Time (event logs, created_at)</li>
+<li><span class="hl-pink">TIMESTAMPTZ</span> — Timestamp with timezone (global apps)</li>
+</ul>
+
+<h2 class="section-title">Special Types</h2>
+<ul class="note-list star">
+<li><span class="hl-green">BOOLEAN</span> — TRUE/FALSE (flags like is_active)</li>
+<li><span class="hl-blue">JSON/JSONB</span> — Flexible nested data (JSONB = binary, faster)</li>
+<li><span class="hl-purple">UUID</span> — 128-bit unique ID (distributed systems)</li>
+<li><span class="hl-orange">ENUM</span> — Predefined values (hard to modify later!)</li>
+</ul>
+
+<div class="sticky blue">
+<strong>💡 UUID vs Auto-increment:</strong> Use auto-increment internally (faster, smaller). Use UUID for public-facing IDs in APIs. Many modern apps use BOTH!
+</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 3: CONSTRAINTS -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch3">
+<h1 class="note-title">🔒 Chapter 3: Constraints</h1>
+
+<h2 class="section-title">Types of Constraints</h2>
+
+<h3 class="topic-title">🔑 PRIMARY KEY</h3>
+<p>Uniquely identifies each row. <span class="hl-red">Cannot be NULL</span>. <span class="hl-red">Must be unique</span>. Every table needs one!</p>
+<div class="code-block">CREATE TABLE employees (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL
+);
+-- Composite PK:
+CREATE TABLE enrollment (
+    student_id INT, course_id INT,
+    PRIMARY KEY (student_id, course_id)
+);</div>
+
+<h3 class="topic-title">🔗 FOREIGN KEY</h3>
+<p>Links two tables. Enforces <span class="hl-yellow">referential integrity</span> — FK value must exist in the parent table.</p>
+
+<table class="compare-table">
+<tr><th>ON DELETE Action</th><th>Behavior</th></tr>
+<tr><td><span class="hl-red">CASCADE</span></td><td>Delete child rows automatically</td></tr>
+<tr><td><span class="hl-blue">SET NULL</span></td><td>Set FK to NULL in children</td></tr>
+<tr><td><span class="hl-green">RESTRICT</span></td><td>Prevent deletion if children exist</td></tr>
+<tr><td><span class="hl-orange">SET DEFAULT</span></td><td>Set FK to default value</td></tr>
+</table>
+
+<h3 class="topic-title">Other Constraints</h3>
+<ul class="note-list check">
+<li><span class="hl-green">NOT NULL</span> — Column must have a value</li>
+<li><span class="hl-blue">UNIQUE</span> — No duplicate values in column</li>
+<li><span class="hl-pink">CHECK</span> — Custom validation: <span class="code-inline">CHECK(price > 0)</span></li>
+<li><span class="hl-orange">DEFAULT</span> — Auto-fill: <span class="code-inline">DEFAULT 'draft'</span></li>
+</ul>
+
+<div class="sticky pink">
+<strong>Best Practice:</strong> Always use NOT NULL unless you have a specific reason for NULLs. Use CHECK constraints to enforce business rules at the database level!
+</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 4: CRUD -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch4">
+<h1 class="note-title">✏️ Chapter 4: CRUD Operations</h1>
+
+<h2 class="section-title">INSERT — Create</h2>
+<div class="code-block">-- Single row:
+INSERT INTO users (name, email) VALUES ('Alice', 'alice@test.com');
+
+-- Batch (MUCH faster!):
+INSERT INTO users (name, email) VALUES
+    ('Bob', 'bob@test.com'),
+    ('Carol', 'carol@test.com');
+
+-- From SELECT:
+INSERT INTO archive SELECT * FROM orders WHERE status = 'done';</div>
+
+<h2 class="section-title">SELECT — Read</h2>
+<div class="code-block">SELECT first_name, salary FROM employees WHERE salary > 50000;
+SELECT DISTINCT department_id FROM employees;  -- No duplicates
+SELECT *, salary * 12 AS annual FROM employees; -- Computed column</div>
+
+<div class="important-box blue">
+<span class="star-label">⭐ Execution Order</span>
+<p>SQL does NOT execute in the order you write it!</p>
+<p><span class="hl-yellow">FROM</span> → <span class="hl-green">WHERE</span> → <span class="hl-blue">GROUP BY</span> → <span class="hl-pink">HAVING</span> → <span class="hl-purple">SELECT</span> → <span class="hl-orange">ORDER BY</span> → <span class="hl-red">LIMIT</span></p>
+<p>This is why you <span class="hl-red">CAN'T use column aliases in WHERE</span> (SELECT runs after WHERE!)</p>
+</div>
+
+<h2 class="section-title">UPDATE — Modify</h2>
+<div class="code-block">UPDATE employees SET salary = salary * 1.10 WHERE department_id = 1;</div>
+
+<h2 class="section-title">DELETE — Remove</h2>
+<div class="code-block">DELETE FROM orders WHERE order_date < '2020-01-01';</div>
+
+<div class="important-box red">
+<span class="star-label">🚨 DANGER</span>
+<p><strong>Always use WHERE with UPDATE and DELETE!</strong></p>
+<p><span class="code-inline">UPDATE employees SET salary = 0;</span> — Updates EVERYONE!</p>
+<p><span class="code-inline">DELETE FROM employees;</span> — Deletes EVERYTHING!</p>
+<p><strong>Test with SELECT first:</strong> <span class="code-inline">SELECT * FROM employees WHERE condition;</span></p>
+</div>
+
+<h3 class="topic-title">DELETE vs TRUNCATE vs DROP</h3>
+<table class="compare-table">
+<tr><th>Command</th><th>Removes</th><th>Rollback?</th><th>Speed</th></tr>
+<tr><td><span class="hl-green">DELETE</span></td><td>Specific rows</td><td>✅ Yes</td><td>Slow (row by row)</td></tr>
+<tr><td><span class="hl-orange">TRUNCATE</span></td><td>All rows</td><td>❌ No</td><td>Very fast</td></tr>
+<tr><td><span class="hl-red">DROP</span></td><td>Entire table</td><td>❌ No</td><td>Instant</td></tr>
+</table>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 5: FILTERING -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch5">
+<h1 class="note-title">🔍 Chapter 5: Filtering (WHERE)</h1>
+
+<h2 class="section-title">Comparison Operators</h2>
+<p><span class="hl-yellow">=</span> equal, <span class="hl-green">!= or <></span> not equal, <span class="hl-blue">></span> greater, <span class="hl-pink">>=</span> greater/equal, <span class="hl-orange"><</span> less, <span class="hl-purple"><=</span> less/equal</p>
+
+<h2 class="section-title">LIKE — Pattern Matching</h2>
+<div class="code-block">WHERE name LIKE 'A%'      -- Starts with A
+WHERE email LIKE '%@gmail.com'  -- Ends with @gmail.com
+WHERE name LIKE '_a%'     -- 2nd letter is 'a'
+-- % = any characters, _ = exactly one character</div>
+
+<div class="sticky orange">
+<strong>⚡ Performance:</strong> <span class="code-inline">LIKE '%keyword'</span> (leading %) can't use indexes → full table scan! Use <span class="code-inline">LIKE 'keyword%'</span> when possible.
+</div>
+
+<h2 class="section-title">IN & BETWEEN</h2>
+<div class="code-block">-- IN: Set membership
+WHERE dept_id IN (1, 3, 5)  -- Same as dept_id=1 OR dept_id=3 OR dept_id=5
+
+-- BETWEEN: Range (inclusive on BOTH ends!)
+WHERE salary BETWEEN 50000 AND 80000
+-- Same as: salary >= 50000 AND salary <= 80000</div>
+
+<h2 class="section-title">EXISTS & NOT EXISTS</h2>
+<div class="code-block">-- EXISTS: Returns TRUE if subquery returns ANY rows
+SELECT d.name FROM departments d
+WHERE EXISTS (
+    SELECT 1 FROM employees e 
+    WHERE e.department_id = d.id AND e.salary > 80000
+);</div>
+
+<div class="important-box red">
+<span class="star-label">🚨 NOT IN Trap</span>
+<p><span class="code-inline">WHERE x NOT IN (1, 2, NULL)</span> returns <span class="hl-red">NO ROWS!</span></p>
+<p>Because <span class="code-inline">x != NULL</span> is always UNKNOWN. Use <span class="hl-green">NOT EXISTS</span> instead!</p>
+</div>
+
+<h3 class="topic-title">EXISTS vs IN</h3>
+<ul class="note-list">
+<li><span class="hl-green">EXISTS</span> stops at first match (short-circuits) → faster for large subqueries</li>
+<li><span class="hl-blue">IN</span> evaluates entire subquery first → better for small static lists</li>
+<li><span class="hl-red">EXISTS handles NULLs correctly</span>; NOT IN fails with NULLs!</li>
+</ul>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 6-9: Sorting, Aggregates, Grouping, NULL -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch6">
+<h1 class="note-title">📊 Chapter 6: Sorting & Pagination</h1>
+
+<div class="code-block">-- ORDER BY:
+SELECT * FROM employees ORDER BY salary DESC;
+SELECT * FROM employees ORDER BY dept_id ASC, salary DESC;
+
+-- LIMIT & OFFSET (Pagination):
+SELECT * FROM employees ORDER BY id LIMIT 10;          -- Page 1
+SELECT * FROM employees ORDER BY id LIMIT 10 OFFSET 10; -- Page 2
+-- Formula: LIMIT size OFFSET (page - 1) * size</div>
+
+<div class="important-box yellow">
+<span class="star-label">⚠️ OFFSET Problem</span>
+<p><span class="code-inline">OFFSET 1000000</span> still scans 1 million rows → very slow!</p>
+<p><strong>Better: Keyset pagination:</strong> <span class="code-inline">WHERE id > last_seen_id ORDER BY id LIMIT 10</span></p>
+</div>
+</div>
+
+<div class="note-page" id="ch7">
+<h1 class="note-title">📈 Chapter 7: Aggregate Functions</h1>
+
+<h2 class="section-title">The Big 5 Aggregates</h2>
+<table class="compare-table">
+<tr><th>Function</th><th>Does</th><th>NULL Behavior</th></tr>
+<tr><td><span class="hl-blue">COUNT(*)</span></td><td>Counts all rows</td><td>Counts NULLs ✅</td></tr>
+<tr><td><span class="hl-blue">COUNT(col)</span></td><td>Counts non-NULL values</td><td>Skips NULLs</td></tr>
+<tr><td><span class="hl-green">SUM(col)</span></td><td>Total of values</td><td>Skips NULLs</td></tr>
+<tr><td><span class="hl-yellow">AVG(col)</span></td><td>Average value</td><td><span class="hl-red">Skips NULLs (careful!)</span></td></tr>
+<tr><td><span class="hl-pink">MIN/MAX(col)</span></td><td>Minimum/Maximum</td><td>Skips NULLs</td></tr>
+</table>
+
+<div class="important-box red">
+<span class="star-label">🚨 AVG + NULL Trap</span>
+<p>Values: 50K, 60K, NULL → <span class="code-inline">AVG = 55K</span> (divides by 2, not 3!)</p>
+<p>Fix: <span class="code-inline">AVG(COALESCE(salary, 0))</span> treats NULL as 0</p>
+</div>
+
+<div class="sticky">
+<strong>💡 Getting the row with MAX:</strong> <span class="code-inline">SELECT name, MAX(salary) FROM emp</span> does NOT give you the highest-paid person's name! Use: <span class="code-inline">ORDER BY salary DESC LIMIT 1</span>
+</div>
+</div>
+
+<div class="note-page" id="ch8">
+<h1 class="note-title">📦 Chapter 8: GROUP BY & HAVING</h1>
+
+<h2 class="section-title">GROUP BY</h2>
+<div class="code-block">SELECT department_id, COUNT(*), AVG(salary)
+FROM employees
+GROUP BY department_id;</div>
+
+<div class="important-box yellow">
+<span class="star-label">⭐ Golden Rule</span>
+<p>Every column in SELECT must either be in <span class="hl-green">GROUP BY</span> or inside an <span class="hl-blue">aggregate function</span>!</p>
+</div>
+
+<h2 class="section-title">WHERE vs HAVING</h2>
+<table class="compare-table">
+<tr><th>Feature</th><th><span class="hl-green">WHERE</span></th><th><span class="hl-blue">HAVING</span></th></tr>
+<tr><td>Filters</td><td>Individual rows</td><td>Groups (after GROUP BY)</td></tr>
+<tr><td>Runs</td><td>BEFORE GROUP BY</td><td>AFTER GROUP BY</td></tr>
+<tr><td>Aggregates?</td><td>❌ Cannot use</td><td>✅ Can use</td></tr>
+</table>
+<div class="code-block">SELECT dept_id, AVG(salary) FROM employees
+WHERE is_active = 1           -- Filter rows first
+GROUP BY dept_id              -- Then group
+HAVING AVG(salary) > 60000;   -- Then filter groups</div>
+</div>
+
+<div class="note-page" id="ch9">
+<h1 class="note-title">❓ Chapter 9: NULL Handling</h1>
+
+<h2 class="section-title">Three-Valued Logic</h2>
+<p>SQL has three values: <span class="hl-green">TRUE</span>, <span class="hl-red">FALSE</span>, and <span class="hl-yellow">UNKNOWN</span>. Any comparison with NULL = UNKNOWN.</p>
+
+<table class="compare-table">
+<tr><th>Expression</th><th>Result</th></tr>
+<tr><td><span class="code-inline">NULL = NULL</span></td><td><span class="hl-red">UNKNOWN ❌</span> (not TRUE!)</td></tr>
+<tr><td><span class="code-inline">NULL IS NULL</span></td><td><span class="hl-green">TRUE ✅</span></td></tr>
+<tr><td><span class="code-inline">NULL + 10</span></td><td>NULL (any math with NULL = NULL)</td></tr>
+</table>
+
+<div class="important-box red">
+<span class="star-label">🚨 Never use = NULL!</span>
+<p>❌ <span class="code-inline">WHERE col = NULL</span> → returns NO rows!</p>
+<p>✅ <span class="code-inline">WHERE col IS NULL</span> → correct!</p>
+</div>
+
+<h2 class="section-title">COALESCE & NULLIF</h2>
+<div class="code-block">-- COALESCE: Returns first non-NULL value
+COALESCE(nickname, first_name, 'Anonymous')
+
+-- NULLIF: Returns NULL if both args are equal
+-- Key use: Prevent division by zero!
+total / NULLIF(count, 0)  -- Returns NULL instead of error</div>
+
+<div class="sticky green">
+<strong>Portability Tip:</strong> Always use <span class="code-inline">COALESCE</span> (SQL standard) instead of IFNULL (MySQL/SQLite), NVL (Oracle), or ISNULL (SQL Server).
+</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 10: JOINS -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch10">
+<h1 class="note-title">🔗 Chapter 10: Joins</h1>
+
+<h2 class="section-title">Join Types Visual Guide</h2>
+<div class="diagram">INNER JOIN:  Only matching rows (intersection)
+  A ∩ B  →  [matched rows only]
+
+LEFT JOIN:   All from A + matched from B
+  A ← B  →  [all A + matching B, NULLs for unmatched]
+
+RIGHT JOIN:  All from B + matched from A
+  A → B  →  [all B + matching A, NULLs for unmatched]
+
+FULL JOIN:   All from both tables
+  A ↔ B  →  [everything, NULLs where no match]
+
+CROSS JOIN:  Every combination (Cartesian product)
+  A × B  →  [n × m rows!]
+
+SELF JOIN:   Table joined with itself
+  A ⟳ A  →  [hierarchies, comparisons]</div>
+
+<h3 class="topic-title">INNER JOIN</h3>
+<div class="code-block">SELECT e.name, d.name AS dept
+FROM employees e
+INNER JOIN departments d ON e.dept_id = d.id;</div>
+<p><span class="hl-yellow">Most common join (~80%)</span> — returns only matching rows from both tables.</p>
+
+<h3 class="topic-title">LEFT JOIN</h3>
+<div class="code-block">-- All employees (even without department):
+SELECT e.name, d.name AS dept
+FROM employees e
+LEFT JOIN departments d ON e.dept_id = d.id;
+
+-- Anti-join pattern (find orphans):
+SELECT e.name FROM employees e
+LEFT JOIN departments d ON e.dept_id = d.id
+WHERE d.id IS NULL;  -- Employees with NO department</div>
+
+<h3 class="topic-title">SELF JOIN</h3>
+<div class="code-block">-- Employee → Manager hierarchy:
+SELECT e.name AS employee, m.name AS manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id;</div>
+
+<div class="important-box red">
+<span class="star-label">🚨 LEFT JOIN + WHERE Trap</span>
+<p><span class="code-inline">LEFT JOIN d ON ... WHERE d.location = 'NYC'</span></p>
+<p>This <span class="hl-red">turns LEFT JOIN into INNER JOIN!</span> The WHERE filters out NULLs.</p>
+<p>✅ Put condition in ON clause instead: <span class="code-inline">ON ... AND d.location = 'NYC'</span></p>
+</div>
+
+<div class="sticky">
+<strong>How Joins Work Internally:</strong>
+<br>🔄 <strong>Nested Loop</strong> — O(n×m), small tables
+<br>#️⃣ <strong>Hash Join</strong> — O(n+m), large unsorted tables  
+<br>⬇️ <strong>Merge Join</strong> — O(n log n), sorted/indexed data
+</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 11-13: Set Ops, Subqueries, CTEs -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch11">
+<h1 class="note-title">⊕ Chapter 11: Set Operations</h1>
+
+<table class="compare-table">
+<tr><th>Operation</th><th>Returns</th><th>Duplicates</th></tr>
+<tr><td><span class="hl-blue">UNION</span></td><td>All unique rows from both</td><td>Removed (slower)</td></tr>
+<tr><td><span class="hl-green">UNION ALL</span></td><td>All rows from both</td><td><span class="hl-yellow">Kept (faster!)</span></td></tr>
+<tr><td><span class="hl-pink">INTERSECT</span></td><td>Common rows only</td><td>Removed</td></tr>
+<tr><td><span class="hl-orange">EXCEPT</span></td><td>In first but not second</td><td>Removed</td></tr>
+</table>
+
+<div class="sticky">
+<strong>Rules:</strong> Both queries must have same number of columns & compatible types. Column names come from first query. ORDER BY goes at the very end.
+</div>
+</div>
+
+<div class="note-page" id="ch12">
+<h1 class="note-title">🎯 Chapter 12: Subqueries</h1>
+
+<h2 class="section-title">Non-Correlated (Independent)</h2>
+<p>Executes <span class="hl-green">once</span>, independently of the outer query.</p>
+<div class="code-block">-- Employees above average salary:
+SELECT * FROM employees
+WHERE salary > (SELECT AVG(salary) FROM employees);</div>
+
+<h2 class="section-title">Correlated (Dependent)</h2>
+<p>Executes <span class="hl-red">once per outer row</span> — references the outer query.</p>
+<div class="code-block">-- Employees above THEIR department's average:
+SELECT * FROM employees e
+WHERE salary > (
+    SELECT AVG(salary) FROM employees e2
+    WHERE e2.dept_id = e.dept_id  -- References outer!
+);</div>
+
+<div class="important-box yellow">
+<span class="star-label">⚠️ Performance</span>
+<p>Correlated subqueries run once per outer row. 10,000 rows = 10,000 executions!</p>
+<p>Often a <span class="hl-green">JOIN</span> or <span class="hl-blue">window function</span> is faster.</p>
+</div>
+</div>
+
+<div class="note-page" id="ch13">
+<h1 class="note-title">🏗️ Chapter 13: CTEs (Common Table Expressions)</h1>
+
+<h2 class="section-title">Basic CTE</h2>
+<div class="code-block">WITH dept_stats AS (
+    SELECT dept_id, AVG(salary) AS avg_sal
+    FROM employees GROUP BY dept_id
+)
+SELECT e.name, d.avg_sal
+FROM employees e JOIN dept_stats d ON e.dept_id = d.dept_id;</div>
+
+<h2 class="section-title">Recursive CTE</h2>
+<div class="code-block">WITH RECURSIVE org_tree AS (
+    -- Base: Start from CEO
+    SELECT id, name, manager_id, 0 AS level
+    FROM employees WHERE manager_id IS NULL
+    UNION ALL
+    -- Recursive: Find direct reports
+    SELECT e.id, e.name, e.manager_id, ot.level + 1
+    FROM employees e JOIN org_tree ot ON e.manager_id = ot.id
+)
+SELECT * FROM org_tree ORDER BY level;</div>
+
+<div class="sticky green">
+<strong>CTE vs Subquery vs Temp Table:</strong>
+<br>📖 CTE — Best readability, reusable within query, supports recursion
+<br>🔄 Subquery — Can't reuse, hard to read when nested
+<br>💾 Temp Table — Materialized on disk, reusable across queries
+</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 14: WINDOW FUNCTIONS -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch14">
+<h1 class="note-title">🪟 Chapter 14: Window Functions</h1>
+
+<h2 class="section-title">Syntax</h2>
+<div class="code-block">function() OVER (
+    PARTITION BY col    -- Groups (like GROUP BY but keeps all rows!)
+    ORDER BY col        -- Order within partition
+    ROWS BETWEEN ...    -- Frame: which rows to include
+)</div>
+
+<div class="important-box blue">
+<span class="star-label">⭐ Key Difference from GROUP BY</span>
+<p><span class="hl-green">GROUP BY</span>: Collapses rows → one row per group</p>
+<p><span class="hl-blue">Window Functions</span>: Keeps ALL rows, adds computed column</p>
+</div>
+
+<h2 class="section-title">Ranking Functions</h2>
+<div class="diagram">Salary: 100K  90K  90K  80K  70K
+
+ROW_NUMBER:  1    2    3    4    5    ← Always unique
+RANK:        1    2    2    4    5    ← Gaps after ties
+DENSE_RANK:  1    2    2    3    4    ← No gaps!</div>
+
+<h3 class="topic-title">Top-N Per Group Pattern ⭐</h3>
+<div class="code-block">-- Top 2 earners per department:
+SELECT * FROM (
+    SELECT *, ROW_NUMBER() OVER (
+        PARTITION BY dept_id ORDER BY salary DESC
+    ) AS rn
+    FROM employees
+) WHERE rn <= 2;</div>
+
+<h2 class="section-title">LAG & LEAD</h2>
+<p><span class="hl-yellow">LAG(col, n)</span> — value from n rows BEFORE current</p>
+<p><span class="hl-green">LEAD(col, n)</span> — value from n rows AFTER current</p>
+<div class="code-block">-- Month-over-month growth:
+SELECT month, revenue,
+    revenue - LAG(revenue) OVER (ORDER BY month) AS growth
+FROM monthly_sales;</div>
+
+<h2 class="section-title">Window Frames</h2>
+<div class="code-block">-- Running total:
+SUM(amt) OVER (ORDER BY date ROWS UNBOUNDED PRECEDING)
+
+-- Moving average (last 3):
+AVG(price) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)
+
+-- Percentage of total:
+salary / SUM(salary) OVER () * 100</div>
+
+<div class="important-box red">
+<span class="star-label">🚨 LAST_VALUE Trap</span>
+<p>Default frame = <span class="code-inline">ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</span></p>
+<p>So LAST_VALUE just returns current row! Always specify full frame for LAST_VALUE:</p>
+<p><span class="code-inline">ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING</span></p>
+</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTERS 15-18: CASE, Views, Indexes, Transactions -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch15">
+<h1 class="note-title">🔀 Chapter 15: CASE Expression</h1>
+<div class="code-block">-- Searched CASE (any condition):
+CASE 
+    WHEN salary >= 100000 THEN 'Executive'
+    WHEN salary >= 70000 THEN 'Senior'
+    ELSE 'Junior'
+END
+
+-- Simple CASE (equality):
+CASE dept_id WHEN 1 THEN 'Eng' WHEN 2 THEN 'Mkt' ELSE 'Other' END
+
+-- In ORDER BY (custom sort!):
+ORDER BY CASE status WHEN 'urgent' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END
+
+-- Conditional aggregation (pivot!):
+SELECT COUNT(CASE WHEN status='active' THEN 1 END) AS active_count</div>
+<div class="sticky">
+<strong>CASE evaluates top-down!</strong> Put specific conditions before general ones. Returns first match and stops.
+</div>
+</div>
+
+<div class="note-page" id="ch16">
+<h1 class="note-title">👁️ Chapter 16: Views</h1>
+
+<table class="compare-table">
+<tr><th>Feature</th><th><span class="hl-blue">Regular View</span></th><th><span class="hl-green">Materialized View</span></th></tr>
+<tr><td>Storage</td><td>No data (just SQL query)</td><td>Results cached on disk</td></tr>
+<tr><td>Speed</td><td>Re-runs query each time</td><td>Reads cached results</td></tr>
+<tr><td>Freshness</td><td>Always current</td><td>Stale until REFRESH</td></tr>
+<tr><td>Use Case</td><td>Abstraction, security</td><td>Dashboards, reports</td></tr>
+</table>
+
+<div class="code-block">CREATE VIEW emp_summary AS
+SELECT e.name, d.name AS dept, e.salary
+FROM employees e JOIN departments d ON e.dept_id = d.id;
+
+-- Use like a table:
+SELECT * FROM emp_summary WHERE salary > 70000;</div>
+</div>
+
+<div class="note-page" id="ch17">
+<h1 class="note-title">⚡ Chapter 17: Indexes</h1>
+<p>An index is a <span class="hl-yellow">B-tree data structure</span> that speeds up lookups from O(n) to <span class="hl-green">O(log n)</span>.</p>
+
+<div class="code-block">CREATE INDEX idx_emp_dept ON employees(department_id);
+CREATE UNIQUE INDEX idx_emp_email ON employees(email);
+CREATE INDEX idx_composite ON employees(dept_id, salary); -- Multi-column</div>
+
+<h3 class="topic-title">When to Index ✅</h3>
+<ul class="note-list check">
+<li>Columns in WHERE clauses</li>
+<li>Foreign key columns</li>
+<li>ORDER BY columns</li>
+<li>High-cardinality columns</li>
+</ul>
+
+<h3 class="topic-title">When NOT to Index ❌</h3>
+<ul class="note-list cross">
+<li>Small tables (< 1000 rows)</li>
+<li>Low-cardinality (boolean, gender)</li>
+<li>Heavy INSERT/UPDATE tables (index maintenance overhead)</li>
+<li>Rarely queried columns</li>
+</ul>
+</div>
+
+<div class="note-page" id="ch18">
+<h1 class="note-title">🔐 Chapter 18: Transactions & ACID</h1>
+
+<table class="compare-table">
+<tr><th>Property</th><th>Meaning</th><th>Example</th></tr>
+<tr><td><span class="hl-red"><strong>A</strong>tomicity</span></td><td>All or nothing</td><td>Bank transfer: both debit & credit or neither</td></tr>
+<tr><td><span class="hl-blue"><strong>C</strong>onsistency</span></td><td>Valid state → valid state</td><td>Constraints satisfied after every transaction</td></tr>
+<tr><td><span class="hl-green"><strong>I</strong>solation</span></td><td>No interference</td><td>Concurrent updates don't corrupt data</td></tr>
+<tr><td><span class="hl-yellow"><strong>D</strong>urability</span></td><td>Survives crashes</td><td>After COMMIT, data is safely on disk</td></tr>
+</table>
+
+<div class="code-block">BEGIN TRANSACTION;
+    UPDATE accounts SET balance = balance - 500 WHERE id = 1;
+    UPDATE accounts SET balance = balance + 500 WHERE id = 2;
+COMMIT;     -- Save all changes
+-- ROLLBACK; -- Undo all changes</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTERS 19-22: Procedures, Triggers, Normalization, Functions -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch19">
+<h1 class="note-title">⚙️ Chapter 19: Stored Procedures</h1>
+<p>Pre-compiled SQL code stored in the database. Accepts parameters, contains logic (IF/ELSE, loops).</p>
+<div class="code-block">-- PostgreSQL:
+CREATE FUNCTION give_raise(emp_id INT, pct DECIMAL) RETURNS VOID AS $$
+BEGIN
+    UPDATE employees SET salary = salary * (1 + pct/100) WHERE id = emp_id;
+END; $$ LANGUAGE plpgsql;</div>
+
+<ul class="note-list check">
+<li><span class="hl-green">Pros</span>: Reduced network traffic, centralized logic, security, pre-compiled</li>
+</ul>
+<ul class="note-list cross">
+<li><span class="hl-red">Cons</span>: Vendor lock-in, hard to debug, version control issues, scaling challenges</li>
+</ul>
+</div>
+
+<div class="note-page" id="ch20">
+<h1 class="note-title">🎯 Chapter 20: Triggers</h1>
+<p>Special procedures that <span class="hl-yellow">automatically execute</span> on INSERT, UPDATE, or DELETE events.</p>
+
+<div class="code-block">CREATE TRIGGER log_salary_change
+AFTER UPDATE OF salary ON employees
+FOR EACH ROW BEGIN
+    INSERT INTO audit_log (action, old_val, new_val)
+    VALUES ('SALARY', OLD.salary, NEW.salary);
+END;</div>
+
+<table class="compare-table">
+<tr><th>Timing</th><th>When</th><th>Use Case</th></tr>
+<tr><td><span class="hl-blue">BEFORE</span></td><td>Before the operation</td><td>Validation, auto-fill</td></tr>
+<tr><td><span class="hl-green">AFTER</span></td><td>After the operation</td><td>Audit logging</td></tr>
+<tr><td><span class="hl-pink">INSTEAD OF</span></td><td>Replaces the operation</td><td>Updatable views</td></tr>
+</table>
+
+<div class="important-box red">
+<span class="star-label">🚨 Trigger Dangers</span>
+<p>Triggers are "invisible" — they run without explicit calls. Cascading triggers = debugging nightmares. Use sparingly!</p>
+</div>
+</div>
+
+<div class="note-page" id="ch21">
+<h1 class="note-title">📐 Chapter 21: Normalization</h1>
+
+<h3 class="topic-title">1NF — Atomic Values</h3>
+<p>Each cell has <span class="hl-yellow">one value only</span>. No comma-separated lists! Each row is unique (has PK).</p>
+
+<h3 class="topic-title">2NF — No Partial Dependencies</h3>
+<p>Non-key columns depend on the <span class="hl-green">ENTIRE primary key</span>, not just part of it.</p>
+
+<h3 class="topic-title">3NF — No Transitive Dependencies</h3>
+<p>Non-key columns <span class="hl-blue">can't depend on other non-key columns</span>.</p>
+<div class="diagram">❌ emp_id → zip_code → city (city depends on zip, not emp_id)
+✅ employees(emp_id, zip_code) + locations(zip_code, city)</div>
+
+<div class="sticky orange">
+<strong>Denormalization:</strong> Sometimes you intentionally break normalization for performance. Read-heavy dashboards benefit from pre-joined data. Trade-off: faster reads vs slower writes + potential inconsistency.
+</div>
+</div>
+
+<div class="note-page" id="ch22">
+<h1 class="note-title">🔧 Chapter 22: String & Date Functions</h1>
+
+<h2 class="section-title">String Functions</h2>
+<p><span class="hl-blue">UPPER/LOWER</span>, <span class="hl-green">LENGTH</span>, <span class="hl-yellow">SUBSTR(s,start,len)</span>, <span class="hl-pink">REPLACE(s,old,new)</span>, <span class="hl-orange">TRIM/LTRIM/RTRIM</span>, <span class="hl-purple">CONCAT or ||</span></p>
+
+<h2 class="section-title">Date Functions</h2>
+<div class="code-block">-- SQLite:
+DATE('now'), TIME('now'), DATETIME('now')
+STRFTIME('%Y-%m', date)  -- Extract year-month
+JULIANDAY(d1) - JULIANDAY(d2)  -- Days between
+
+-- PostgreSQL:
+NOW(), CURRENT_DATE, DATE_TRUNC('month', date)
+date1 - date2  -- Interval between
+
+-- MySQL:
+NOW(), CURDATE(), DATEDIFF(d1, d2), DATE_FORMAT(d, '%Y-%m')</div>
+
+<div class="sticky pink">
+<strong>⚠️ Warning:</strong> Date functions are the LEAST standardized across databases! Always check your specific database's documentation.
+</div>
+
+<h2 class="section-title">Type Casting</h2>
+<div class="code-block">CAST(value AS type)
+CAST('42' AS INTEGER)   -- String → Number
+CAST(42 AS TEXT)         -- Number → String</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 23: PARTITIONING & SHARDING -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch23">
+<h1 class="note-title">📦 Chapter 23: Partitioning & Sharding</h1>
+
+<h2 class="section-title">Table Partitioning</h2>
+<p>Splitting a massive physical table into smaller table files across disk while keeping a <span class="hl-green">single logical table</span> interface!</p>
+
+<table class="compare-table">
+<tr><th>Method</th><th>How It Splits Data</th><th>Best Use Case</th></tr>
+<tr><td><span class="hl-blue">Range</span></td><td>Continuous intervals (dates, IDs)</td><td>Time-series logs (`orders_2026_01`)</td></tr>
+<tr><td><span class="hl-green">List</span></td><td>Specific categorical values</td><td>Regions (`users_usa`, `users_eu`)</td></tr>
+<tr><td><span class="hl-purple">Hash</span></td><td>Modulo hash of partition key</td><td>Even write balancing across N disks</td></tr>
+</table>
+
+<div class="important-box yellow">
+<span class="star-label">⭐ Partition Pruning</span>
+<p>When query filter matches partition key (`WHERE date >= '2026-06-01'`), the DB skips scanning irrelevant disk partitions completely! Massive speedup!</p>
+</div>
+
+<h3 class="topic-title">Sharding (Horizontal Partitioning across Servers)</h3>
+<p>When vertical scaling (bigger RAM/CPU) hits limits, data is split across multiple physical database servers (`Shard A`, `Shard B`). Requires router/routing logic!</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 24: CONCURRENCY & MVCC -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch24">
+<h1 class="note-title">⚡ Chapter 24: Concurrency & MVCC</h1>
+
+<h2 class="section-title">Multi-Version Concurrency Control (MVCC)</h2>
+<p>How databases allow thousands of users to read and write without locking each other out:</p>
+<div class="sticky green">
+<strong>⭐ The Golden Rule of MVCC:</strong> Readers NEVER block Writers, and Writers NEVER block Readers!
+</div>
+
+<h3 class="topic-title">How MVCC Works Internally</h3>
+<ul class="note-list star">
+<li>Each row has hidden timestamp/version columns (`xmin`, `xmax`)</li>
+<li>Updates don't overwrite rows; they write a <span class="hl-yellow">new row version</span>!</li>
+<li>Readers see a snapshot of rows valid at their transaction start time</li>
+<li>Dead old versions cleaned up by background garbage collection (`VACUUM`)</li>
+</ul>
+
+<h2 class="section-title">Locking Strategies</h2>
+<div class="code-block">-- Pessimistic Locking (lock row during read):
+SELECT * FROM accounts WHERE id = 1 FOR UPDATE;
+
+-- Optimistic Locking (check version number before save):
+UPDATE accounts SET balance=100, version=version+1 
+WHERE id=1 AND version=5; -- Fails if someone updated it!</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 25: JSON & NOSQL IN SQL -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch25">
+<h1 class="note-title">📄 Chapter 25: JSON & NoSQL in SQL</h1>
+
+<h2 class="section-title">Why Hybrid SQL + JSON?</h2>
+<p>Combine rigid relational schemas for core entities (Users, Orders) with <span class="hl-pink">flexible JSON documents</span> for dynamic metadata (Settings, Attributes)!</p>
+
+<div class="code-block">-- PostgreSQL JSONB Queries:
+-- Extract text property (->>):
+SELECT metadata->>'theme' FROM users WHERE metadata->>'tier' = 'pro';
+
+-- Check array containment (@>):
+SELECT * FROM products WHERE specs @> '{"wireless": true}';
+
+-- Inverted GIN Index (blazing fast JSON queries!):
+CREATE INDEX idx_prod_specs ON products USING GIN (specs);</div>
+
+<div class="sticky blue">
+<strong>💡 JSON vs JSONB in PostgreSQL:</strong> `JSON` stores exact raw text (slower queries). `JSONB` stores parsed binary representation (slightly slower insert, 10x faster queries + indexing!). Always prefer `JSONB`!
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 26: SECURITY & RLS -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch26">
+<h1 class="note-title">🛡️ Chapter 26: Security & Row-Level Security</h1>
+
+<h2 class="section-title">DCL (Data Control Language)</h2>
+<div class="code-block">GRANT SELECT, INSERT ON orders TO app_user;
+REVOKE DELETE ON orders FROM app_user;</div>
+
+<h2 class="section-title">Row-Level Security (RLS) ⭐</h2>
+<p>Enforces security filters at the engine level so users can <span class="hl-red">ONLY see their own tenant rows</span>, even with `SELECT *`!</p>
+
+<div class="code-block">ALTER TABLE tenant_orders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation ON tenant_orders
+USING (tenant_id = current_setting('app.tenant_id')::uuid);</div>
+<p>Prevents multi-tenant SaaS data leaks at the database layer!</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CHAPTER 27: BACKUP & REPLICATION -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="note-page" id="ch27">
+<h1 class="note-title">💾 Chapter 27: Backup & Replication</h1>
+
+<h2 class="section-title">Write-Ahead Logging (WAL)</h2>
+<p>Every change is sequentially appended to a WAL log on disk before modifying database table pages. Ensures durability + instant crash recovery!</p>
+
+<h2 class="section-title">Point-In-Time Recovery (PITR)</h2>
+<p>By combining weekly full disk backups with continuous stream WAL logs, you can restore your database to <span class="hl-green">any exact second in time</span> (e.g., 5 seconds before someone ran `DROP TABLE`)!</p>
+
+<h3 class="topic-title">Replication Architectures</h3>
+<ul class="note-list check">
+<li><span class="hl-blue">Primary-Replica (Master-Slave):</span> All writes go to Primary; Replicas handle read-heavy queries.</li>
+<li><span class="hl-purple">Synchronous vs Async:</span> Sync waits for replica confirmation (zero data loss); Async responds immediately (faster).</li>
+</ul>
+</div>
+
+</div><!-- end content -->
+
+<script>
+function toggleTOC(){
+    document.getElementById('tocSidebar').classList.toggle('hidden');
+    document.getElementById('mainContent').classList.toggle('full');
+}
+function changeFontSize(delta){
+    const body=document.body;
+    const current=parseFloat(getComputedStyle(body).fontSize);
+    body.style.fontSize=(current+delta)+'px';
+}
+</script>
+</body>
+</html>

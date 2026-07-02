@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Fundamentals - Complete Learning Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a2e;
+            --accent-blue: #4f46e5;
+            --accent-purple: #7c3aed;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-pink: #ec4899;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #2a2a3e;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-animation .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.15;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .orb-1 { width: 500px; height: 500px; background: var(--accent-blue); top: -100px; left: -100px; animation-delay: 0s; }
+        .orb-2 { width: 400px; height: 400px; background: var(--accent-purple); top: 50%; right: -100px; animation-delay: -5s; }
+        .orb-3 { width: 350px; height: 350px; background: var(--accent-cyan); bottom: -50px; left: 30%; animation-delay: -10s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -30px) scale(1.1); }
+            50% { transform: translate(-20px, 40px) scale(0.95); }
+            75% { transform: translate(30px, 20px) scale(1.05); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-top: 40px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(79, 70, 229, 0.15);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--accent-blue);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff 0%, #4f46e5 50%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .card {
+            background: rgba(26, 26, 46, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--card-accent, var(--accent-blue));
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .card:hover::before { transform: scaleX(1); }
+
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: var(--card-accent, var(--accent-blue));
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 40px rgba(79, 70, 229, 0.1);
+        }
+
+        .card-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+            background: rgba(79, 70, 229, 0.1);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .card-features {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .feature-tag {
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .topics-section {
+            background: rgba(26, 26, 46, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+
+        .topics-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .topic-item {
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .topic-item:hover {
+            background: rgba(79, 70, 229, 0.1);
+            border-color: rgba(79, 70, 229, 0.3);
+        }
+
+        .topic-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            .cards-grid { grid-template-columns: 1fr; }
+            .stats { gap: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="badge">Stage 1 – SQL Fundamentals</div>
+            <h1>Master SQL<br>From Zero to Hero</h1>
+            <p>A comprehensive, interactive learning resource with live SQL execution, handwritten notes, and interview preparation.</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number">22+</div>
+                    <div class="stat-label">Chapters</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">150+</div>
+                    <div class="stat-label">Interactive Slides</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">200+</div>
+                    <div class="stat-label">Code Examples</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">100+</div>
+                    <div class="stat-label">Interview Q&A</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="cards-grid">
+            <a href="slides/index.html" class="card" style="--card-accent: #4f46e5;">
+                <div class="card-icon" style="background: rgba(79, 70, 229, 0.15);">🎯</div>
+                <h2>Interactive Slides</h2>
+                <p>Learn SQL with a beautiful slide deck featuring live SQL execution powered by SQLite in your browser. Write, run, and see results instantly.</p>
+                <div class="card-features">
+                    <span class="feature-tag">Live SQL Editor</span>
+                    <span class="feature-tag">22 Chapters</span>
+                    <span class="feature-tag">Visual Diagrams</span>
+                    <span class="feature-tag">Keyboard Nav</span>
+                </div>
+            </a>
+
+            <a href="notes/index.html" class="card" style="--card-accent: #10b981;">
+                <div class="card-icon" style="background: rgba(16, 185, 129, 0.15);">📝</div>
+                <h2>Handwritten Notes</h2>
+                <p>Beautiful, colorful notes in handwritten-style fonts. Important concepts are highlighted in distinct colors. Print to PDF for offline study.</p>
+                <div class="card-features">
+                    <span class="feature-tag">Handwritten Font</span>
+                    <span class="feature-tag">Color Highlights</span>
+                    <span class="feature-tag">Print to PDF</span>
+                    <span class="feature-tag">Key Concepts</span>
+                </div>
+            </a>
+
+            <a href="interview/index.html" class="card" style="--card-accent: #f59e0b;">
+                <div class="card-icon" style="background: rgba(245, 158, 11, 0.15);">💼</div>
+                <h2>Interview Preparation</h2>
+                <p>100+ curated interview questions with detailed answers. Includes tips on how to present answers to technical recruiters effectively.</p>
+                <div class="card-features">
+                    <span class="feature-tag">100+ Questions</span>
+                    <span class="feature-tag">Detailed Answers</span>
+                    <span class="feature-tag">Recruiter Tips</span>
+                    <span class="feature-tag">Difficulty Levels</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="topics-section">
+            <h2>📚 Complete Topic Coverage</h2>
+            <div class="topics-grid">
+                <div class="topic-item"><span class="topic-dot" style="background:#4f46e5"></span>Database Basics</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#7c3aed"></span>Data Types</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#06b6d4"></span>Constraints</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#10b981"></span>CRUD Operations</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#f59e0b"></span>Filtering & WHERE</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#ec4899"></span>Sorting</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#ef4444"></span>Aggregate Functions</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#4f46e5"></span>Grouping</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#7c3aed"></span>NULL Handling</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#06b6d4"></span>Joins (6 Types)</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#10b981"></span>Set Operations</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#f59e0b"></span>Subqueries</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#ec4899"></span>CTEs & Recursive</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#ef4444"></span>Window Functions</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#4f46e5"></span>CASE Expression</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#7c3aed"></span>Views</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#06b6d4"></span>Indexes</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#10b981"></span>Transactions & ACID</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#f59e0b"></span>Stored Procedures</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#ec4899"></span>Triggers</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#ef4444"></span>Normalization</div>
+                <div class="topic-item"><span class="topic-dot" style="background:#4f46e5"></span>String & Date Functions</div>
+            </div>
+        </div>
+
+        <footer>
+            <p>SQL Fundamentals Learning Hub • Built for Deep Learning • 2026</p>
+        </footer>
+    </div>
+</body>
+</html>
