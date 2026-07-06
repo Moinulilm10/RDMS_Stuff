@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 3 Database Internals & Storage Engine Notes · Print PDF Ready</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Patrick+Hand&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper-bg: #fefcf7;
+            --paper-line: rgba(180, 200, 230, 0.4);
+            --margin-line: #ff8b8b;
+            --ink: #1e293b;
+            --ink-muted: #475569;
+            
+            /* Highlighter Palette - Separate colors for distinct concepts! */
+            --hl-pink: #ffe4e6;
+            --hl-yellow: #fef9c3;
+            --hl-green: #dcfce7;
+            --hl-blue: #e0f2fe;
+            --hl-purple: #f3e8ff;
+            --hl-orange: #ffedd5;
+
+            /* Sticky Notes */
+            --sticky-bg: #fffef0;
+            --sticky-border: #fde047;
+
+            /* Code box */
+            --code-bg: #0f172a;
+            --code-text: #f8fafc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #0f172a;
+            color: var(--ink);
+            font-family: 'Patrick Hand', cursive;
+            font-size: 1.38rem;
+            line-height: 1.85;
+            padding: 3rem 1.5rem;
+        }
+
+        /* Layout Container */
+        .layout-grid {
+            max-width: 1380px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 290px 1fr;
+            gap: 2.5rem;
+            align-items: start;
+        }
+
+        /* Sidebar Navigation */
+        .notebook-nav {
+            background: #1e293b;
+            color: #f8fafc;
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: sticky;
+            top: 2rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .notebook-nav h2 {
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #fcd34d;
+            margin-bottom: 1.2rem;
+            font-weight: 800;
+        }
+
+        .notebook-nav ul { list-style: none; }
+        .notebook-nav li { margin-bottom: 0.55rem; }
+        .notebook-nav a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.86rem;
+            font-weight: 600;
+            display: block;
+            padding: 0.4rem 0.75rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .notebook-nav a:hover {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fff;
+            transform: translateX(4px);
+        }
+
+        .nav-home-btn {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-home-btn a {
+            background: #f59e0b;
+            color: #000 !important;
+            text-align: center;
+            padding: 0.65rem;
+            border-radius: 10px;
+            font-weight: 800;
+        }
+
+        /* Notebook Page */
+        .notebook-page {
+            background-color: var(--paper-bg);
+            background-image: 
+                linear-gradient(90deg, transparent 79px, var(--margin-line) 79px, var(--margin-line) 81px, transparent 81px),
+                linear-gradient(var(--paper-line) 1px, transparent 1px);
+            background-size: 100% 2.2rem;
+            border-radius: 8px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+            padding: 3rem 4rem 4rem 7rem;
+            position: relative;
+        }
+
+        /* Spiral Ring Binding Graphic */
+        .notebook-page::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 35px;
+            background-image: radial-gradient(circle at center, #0f172a 8px, transparent 9px);
+            background-size: 100% 2.2rem;
+            background-position: 0 0.5rem;
+        }
+
+        h1 {
+            font-family: 'Caveat', cursive;
+            font-size: 3.8rem;
+            color: #0f172a;
+            line-height: 1.1;
+            margin-bottom: 0.5rem;
+            border-bottom: 3px solid #0f172a;
+            padding-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #d97706;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-family: 'Caveat', cursive;
+            font-size: 2.8rem;
+            color: #1e40af;
+            margin-top: 3.5rem;
+            margin-bottom: 1rem;
+            padding-top: 1rem;
+            border-top: 2px dashed rgba(30, 64, 175, 0.2);
+        }
+
+        h3 {
+            font-family: 'Caveat', cursive;
+            font-size: 2.1rem;
+            color: #9333ea;
+            margin-top: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p { margin-bottom: 1.2rem; }
+
+        /* Highlighters - Separate colors for distinct concepts! */
+        .hl {
+            padding: 0.1rem 0.45rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        /* Pink = Performance & Bottlenecks */
+        .hl-pink { background-color: var(--hl-pink); border-bottom: 2px solid #f43f5e; }
+        /* Yellow = Memory & Cache */
+        .hl-yellow { background-color: var(--hl-yellow); border-bottom: 2px solid #eab308; }
+        /* Green = B+ Tree & Indexing */
+        .hl-green { background-color: var(--hl-green); border-bottom: 2px solid #22c55e; }
+        /* Blue = Storage & Page Architecture */
+        .hl-blue { background-color: var(--hl-blue); border-bottom: 2px solid #0ea5e9; }
+        /* Purple = Concurrency & MVCC */
+        .hl-purple { background-color: var(--hl-purple); border-bottom: 2px solid #a855f7; }
+        /* Orange = Durability & WAL */
+        .hl-orange { background-color: var(--hl-orange); border-bottom: 2px solid #f97316; }
+
+        /* Problem vs Solution Callouts */
+        .callout-problem {
+            background: #fff1f2;
+            border-left: 5px solid #e11d48;
+            padding: 1.2rem 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.5rem 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #881337;
+        }
+        .callout-problem strong {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #be123c;
+            margin-bottom: 0.4rem;
+            font-family: 'Caveat', cursive;
+            font-size: 1.7rem;
+        }
+
+        .callout-solution {
+            background: #f0fdf4;
+            border-left: 5px solid #16a34a;
+            padding: 1.2rem 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.5rem 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #14532d;
+        }
+        .callout-solution strong {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #15803d;
+            margin-bottom: 0.4rem;
+            font-family: 'Caveat', cursive;
+            font-size: 1.7rem;
+        }
+
+        /* Code Snippets */
+        .code-box {
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .code-label {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #fcd34d;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        /* Sticky Notes */
+        .sticky-note {
+            background: var(--sticky-bg);
+            border: 1px solid var(--sticky-border);
+            padding: 1.5rem;
+            border-radius: 4px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            transform: rotate(-1deg);
+            margin: 2rem 0;
+            font-family: 'Caveat', cursive;
+            font-size: 1.7rem;
+            line-height: 1.4;
+            color: #713f12;
+        }
+
+        /* Comparison Tables */
+        .notes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.88rem;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .notes-table th {
+            background: #1e293b;
+            color: #fff;
+            padding: 0.9rem 1.2rem;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .notes-table td {
+            padding: 0.9rem 1.2rem;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        .notes-table tr:last-child td { border-bottom: none; }
+        .notes-table tr:nth-child(even) { background: #f8fafc; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .notebook-nav { display: none; }
+            .layout-grid { grid-template-columns: 1fr; }
+            .notebook-page { box-shadow: none; border: none; padding: 2rem 2rem 2rem 4rem; }
+            .code-box { break-inside: avoid; }
+            .callout-problem, .callout-solution, .sticky-note { break-inside: avoid; }
+        }
+
+        @media (max-width: 1024px) {
+            .layout-grid { grid-template-columns: 1fr; }
+            .notebook-nav { position: relative; top: 0; }
+            .notebook-page { padding: 2rem 1.5rem 2rem 4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="layout-grid">
+    <!-- Sidebar Navigation -->
+    <nav class="notebook-nav">
+        <h2>⚙️ Stage 3 Index</h2>
+        <ul>
+            <li><a href="#mod1">1. The Query Lifecycle</a></li>
+            <li><a href="#mod2">2. Memory & Buffer Pool</a></li>
+            <li><a href="#mod3">3. Disk Storage & Pages</a></li>
+            <li><a href="#mod4">4. B+ Tree Indexing</a></li>
+            <li><a href="#mod5">5. Concurrency & MVCC</a></li>
+            <li><a href="#mod6">6. Durability & WAL</a></li>
+            <li><a href="#mod7">7. Why is DB Slow?</a></li>
+            <li><a href="#mod8">8. Beyond: LSM & Columnar</a></li>
+        </ul>
+        <div class="nav-home-btn">
+            <a href="../index.html">← Back to Stage 3 Hub</a>
+        </div>
+    </nav>
+
+    <!-- Main Notebook Paper -->
+    <main class="notebook-page">
+        <h1>⚙️ Database Internals & Storage Engines</h1>
+        <div class="subtitle">Stage 3 ⭐⭐⭐⭐⭐ · What Separates Juniors from Seniors · Print PDF Ready</div>
+
+        <div class="sticky-note">
+            💡 <strong>The Senior Engineer Mindset:</strong> Never treat a database as a black box! When a system scales to 50,000 requests/sec, your ability to diagnose disk I/O, buffer pool thrashing, B+ tree page splits, and WAL synchronization is what defines Staff-level engineering!
+        </div>
+
+        <!-- MODULE 1 -->
+        <section id="mod1">
+            <h2>Module 1: The Lifecycle of a SQL Query</h2>
+            <p>What actually happens under the hood when you execute <code>SELECT * FROM users WHERE id = 42;</code>?</p>
+            
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Blind Performance Bottlenecks</strong>
+                When a query times out under heavy traffic, juniors randomly add indexes or reboot instances. Seniors trace the exact 5-stage engine pipeline to pinpoint whether the bottleneck is parsing CPU, stale statistics in the planner, or random disk I/O in the storage engine!
+            </div>
+
+            <h3>The 5-Stage Execution Pipeline</h3>
+            <ol>
+                <li><span class="hl hl-blue">1. SQL Parser:</span> Tokenizes the SQL string and builds an Abstract Syntax Tree (AST). Validates grammar and syntax rules.</li>
+                <li><span class="hl hl-blue">2. Analyzer / Binder:</span> Checks the AST against the System Catalog (data dictionary) to verify table names, column types, and IAM access permissions.</li>
+                <li><span class="hl hl-pink">3. Query Planner &amp; CBO:</span> The <strong>Cost-Based Optimizer (CBO)</strong> evaluates multiple execution paths using statistical histograms (cardinality and selectivity) to pick the cheapest disk I/O plan!</li>
+                <li><span class="hl hl-purple">4. Execution Engine:</span> Pulls tuples using the <strong>Volcano Iterator Model</strong> (calling <code>open()</code>, <code>next()</code>, and <code>close()</code> on tree operators).</li>
+                <li><span class="hl hl-orange">5. Storage Engine:</span> Checks if requested 4KB/8KB pages reside in the in-memory <span class="hl hl-yellow">Buffer Pool</span>. If not, fetches physical blocks from SSD/disk!</li>
+            </ol>
+
+            <div class="code-box">
+                <span class="code-label">SQL Pro-Tip: Bypassing Parser & Planner Overhead</span>
+-- In high-throughput APIs (e.g., Uber GPS ingestion or Stripe checkout),
+-- parsing SQL on every request wastes up to 30% of database CPU!
+-- Use PREPARED STATEMENTS to compile and cache the execution plan once:
+
+PREPARE get_user (int) AS
+    SELECT id, email, status FROM users WHERE id = $1;
+
+-- Execute cached plan instantly without re-parsing:
+EXECUTE get_user(42);</div>
+        </section>
+
+        <!-- MODULE 2 -->
+        <section id="mod2">
+            <h2>Module 2: Memory Architecture & The Buffer Pool</h2>
+
+            <h3>2.1 Why Buffer Pools Exist: RAM vs Disk Latency</h3>
+            <p>Reading from physical disk (even NVMe SSDs) takes ~100,000 nanoseconds. Reading from RAM takes ~100 nanoseconds. The <span class="hl hl-yellow">Buffer Pool</span> is an in-memory cache managed directly by the database storage engine, dividing RAM into fixed <strong>4KB, 8KB, or 16KB memory frames</strong> that mirror physical disk blocks!</p>
+
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Cache Pollution & Thrashing</strong>
+                Under basic LRU (Least Recently Used), if a data analyst runs an analytical dump (<code>SELECT * FROM old_audit_logs</code> scanning 500GB of cold data), every hot production page is evicted from RAM! The database freezes for all live customers!
+            </div>
+
+            <div class="callout-solution">
+                <strong>✅ Architectural Solution: Scan-Resistant Eviction (Clock Sweep / LRU-K)</strong>
+                Modern engines use <strong>Midpoint Insertion (InnoDB)</strong> or <strong>2Q / LRU-K (PostgreSQL)</strong>. New pages read from disk enter at the midpoint! They only get promoted to the hot working set if they are accessed a *second* time within a specific time window!
+            </div>
+
+            <div class="code-box">
+                <span class="code-label">Monitoring Buffer Pool Hit Ratio in PostgreSQL</span>
+-- If Hit Ratio drops below 99.0%, RAM is under-provisioned or queries are doing table scans!
+SELECT 
+    sum(heap_blks_read) as disk_reads,
+    sum(heap_blks_hit)  as buffer_hits,
+    round(sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read))::numeric * 100, 2) as hit_ratio_percentage
+FROM pg_statio_user_tables;</div>
+        </section>
+
+        <!-- MODULE 3 -->
+        <section id="mod3">
+            <h2>Module 3: Disk Storage & Page Anatomy</h2>
+
+            <h3>3.1 Slotted Page Architecture</h3>
+            <p>Why don't databases store rows contiguously like text files? Because variable-length strings (<code>VARCHAR(255)</code>) would leave fragmented holes whenever a row is deleted or updated!</p>
+            <p>All major RDBMS (PostgreSQL, MySQL/InnoDB, SQLite) use <span class="hl hl-blue">Slotted Page Architecture</span> inside each fixed 4KB/8KB disk block:</p>
+            <ul>
+                <li><strong>Line Pointers (Slot Array):</strong> Fixed-size pointers at the top of the page growing <span class="hl hl-pink">DOWNWARDS</span>. An index references a tuple via its <strong>Row ID (RID = Page# + Slot#)</strong>.</li>
+                <li><strong>Tuple Data:</strong> Actual row data inserted at the bottom of the page growing <span class="hl hl-green">UPWARDS</span>!</li>
+                <li><strong>Free Space:</strong> The empty space in the middle where Line Pointers and Tuples meet!</li>
+            </ul>
+
+            <div class="sticky-note">
+                💡 <strong>Why Slotted Pages are Brilliant:</strong> When a tuple moves within a page during compaction, ONLY the internal offset inside the Line Pointer changes! The Row ID (Page# + Slot#) remains identical, meaning zero secondary B+ Tree indexes need to be updated!
+            </div>
+
+            <h3>3.2 Tuple Header & MVCC Visibility Tags</h3>
+            <p>Every row on disk is prefixed by a mandatory <strong>Tuple Header</strong> (23+ bytes in PostgreSQL) containing hidden system columns:</p>
+            <ul>
+                <li><code>xmin</code>: The Transaction ID (TXID) that inserted this version.</li>
+                <li><code>xmax</code>: The Transaction ID (TXID) that deleted/updated this version (0 if alive!).</li>
+                <li><strong>NULL Bitmap:</strong> A bit array recording which columns are NULL (saving disk space by storing zero data bytes!).</li>
+            </ul>
+        </section>
+
+        <!-- MODULE 4 -->
+        <section id="mod4">
+            <h2>Module 4: B+ Tree Indexing & Search Mechanics</h2>
+
+            <h3>4.1 Why B+ Trees Beat Binary Search Trees</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Deep Disk Seek Latency</strong>
+                In a Binary Tree, each node has only 2 children. Indexing 20 million records creates a tree height of 24 levels! Traversing 24 levels requires 24 random disk seeks ($24 \\times 10ms = 240ms$ per lookup!).
+            </div>
+            <p>A <span class="hl hl-green">B+ Tree</span> is an N-ary balanced search tree optimized for 8KB disk pages. With a branching factor of $N=500$, a 3-level tree indexes <strong>125,000,000 records</strong>! Finding any record takes at most <strong>3 disk seeks</strong>!</p>
+            <p>Furthermore, because the Root and Level 1 nodes are permanently pinned in Buffer Pool RAM, finding a record in 100 million rows requires only <strong>1 physical disk read</strong>!</p>
+
+            <table class="notes-table">
+                <thead>
+                    <tr>
+                        <th>Index Type</th>
+                        <th>Leaf Node Contents</th>
+                        <th>Pros & Enterprise Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Clustered Index</strong> (InnoDB PK)</td>
+                        <td>Stores actual physical row data!</td>
+                        <td>Blazing fast PK lookups. Only ONE clustered index allowed per table.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Secondary Index</strong> (Non-Clustered)</td>
+                        <td>Stores indexed key + pointer to Primary Key / RID.</td>
+                        <td>Allows indexing secondary attributes (email, status). Requires double lookup!</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Covering Index</strong> (Index-Only Scan)</td>
+                        <td>Includes requested columns in index leaf!</td>
+                        <td><strong>⭐ 10x Speedup!</strong> Answers query directly from index without touching table heap!</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>4.2 Page Splits & Random UUID Thrashing</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: 50% Index Bloat & I/O Spikes</strong>
+                Why do senior architects forbid random UUIDv4 as Primary Keys in MySQL InnoDB? Because random UUIDs insert anywhere across the B+ Tree! This triggers endless 8KB Page Splits, causes 50% index fragmentation bloat, and forces random disk I/O! Always use sequential <span class="hl hl-green">UUIDv7 or ULID</span>!
+            </div>
+        </section>
+
+        <!-- MODULE 5 -->
+        <section id="mod5">
+            <h2>Module 5: Concurrency Control & MVCC</h2>
+
+            <h3>5.1 Multi-Version Concurrency Control (MVCC)</h3>
+            <p>The golden rule of modern RDBMS: <span class="hl hl-purple">Readers don't block writers, and writers don't block readers!</span></p>
+            <p>When a transaction updates row #10, it does NOT overwrite physical disk memory! It inserts a brand new tuple version with timestamp <code>xmin = current_txid</code>, and marks the old tuple with <code>xmax = current_txid</code>. Concurrent read queries inspect tuple headers and ignore any versions created after their transaction snapshot began!</p>
+
+            <h3>5.2 Dead Tuples & The Role of VACUUM</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Table Bloat & Degradation</strong>
+                Because MVCC never overwrites old data in place, updating a row 10,000 times creates 1 alive tuple and 9,999 dead tuples! Without cleanup, table size bloats from 100MB to 50GB!
+            </div>
+            <p><span class="hl hl-purple">PostgreSQL VACUUM / Autovacuum:</span> Background worker processes scan pages, remove dead tuple line pointers, and make free space available for new inserts! Never kill or disable Autovacuum!</p>
+        </section>
+
+        <!-- MODULE 6 -->
+        <section id="mod6">
+            <h2>Module 6: Durability & Crash Recovery (WAL)</h2>
+
+            <h3>6.1 Write-Ahead Logging (WAL) Architecture</h3>
+            <div class="callout-problem">
+                <strong>🛑 Real-World Problem Solved: Random Disk I/O Saturation</strong>
+                Updating 5 scattered rows modifies 5 different 8KB physical disk pages. Writing those 5 random blocks to disk requires 5 slow random disk seeks (~50ms total!). If 1,000 users check out simultaneously, random I/O freezes the server!
+            </div>
+            <div class="callout-solution">
+                <strong>✅ Architectural Solution: Converting Random I/O to Sequential I/O</strong>
+                The <span class="hl hl-orange">WAL Protocol</span> mandates that before any modified dirty page in RAM is written to disk, the change record MUST be sequentially appended and flushed (<code>fsync</code>) to the WAL log file! Appending bytes to the end of a log file requires zero disk head movement (&lt; 0.1ms per write)!
+            </div>
+
+            <h3>6.2 ARIES Crash Recovery Algorithm</h3>
+            <p>When a database server reboot occurs after a power outage at 3:00 AM, all RAM buffer pools are erased! The storage engine executes the <span class="hl hl-orange">ARIES protocol</span> in 3 distinct phases:</p>
+            <ol>
+                <li><strong>1. Analysis Phase:</strong> Scans WAL forward from last Checkpoint LSN to identify all Active Transactions &amp; Dirty Pages at crash time.</li>
+                <li><strong>2. Redo Phase (Repeating History!):</strong> Replays ALL WAL log records forward, restoring disk pages to their exact physical state at crash time!</li>
+                <li><strong>3. Undo Phase:</strong> Scans WAL backward, executing compensation log records to rollback all uncommitted transactions!</li>
+            </ol>
+        </section>
+
+        <!-- MODULE 7 -->
+        <section id="mod7">
+            <h2>Module 7: Why is the Database Slow? (Diagnosis Framework)</h2>
+            <p>When query P99 latency spikes in production, senior engineers execute a structured elimination framework:</p>
+
+            <table class="notes-table">
+                <thead>
+                    <tr>
+                        <th>Root Cause Category</th>
+                        <th>Key Symptom / Metric</th>
+                        <th>Senior Architectural Fix</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="hl hl-pink">1. Buffer Pool Thrashing</span></td>
+                        <td>Buffer Pool Hit Ratio &lt; 95%, high disk iowait.</td>
+                        <td>Working set exceeds RAM. Increase RAM, partition old archives, or kill queries doing accidental table scans!</td>
+                    </tr>
+                    <tr>
+                        <td><span class="hl hl-green">2. Index Bloat & Page Splits</span></td>
+                        <td>Table size 5x larger than data; random UUID keys.</td>
+                        <td>Switch to sequential UUIDv7/ULID. Execute <code>REINDEX CONCURRENTLY</code> during off-peak hours!</td>
+                    </tr>
+                    <tr>
+                        <td><span class="hl hl-purple">3. Lock Contention & Bloat</span></td>
+                        <td>Queries stuck in <code>waiting for lock</code>; TXID wraparound warning.</td>
+                        <td>Kill long-running transactions (&gt; 30 mins) that block Autovacuum! Shard hot inventory counters!</td>
+                    </tr>
+                    <tr>
+                        <td><span class="hl hl-blue">4. Stale Statistics (CBO)</span></td>
+                        <td>CBO chooses Full Table Scan instead of Index Scan.</td>
+                        <td>Run <code>ANALYZE table_name;</code> to update histogram distributions in system catalogs!</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- MODULE 8 -->
+        <section id="mod8">
+            <h2>Module 8: Beyond Relational: LSM & Columnar Storage</h2>
+
+            <h3>8.1 LSM-Trees vs B+ Trees (RocksDB / Cassandra)</h3>
+            <p>For write-heavy IoT event logging (100,000 writes/sec), B+ Tree page splits cause massive write amplification. <span class="hl hl-green">LSM-Trees (Log-Structured Merge-Trees)</span> turn ALL writes into sequential appends by buffering mutations in a RAM <strong>MemTable</strong> and flushing them to disk as immutable sorted <strong>SSTables</strong>!</p>
+
+            <h3>8.2 Columnar vs Row Storage (OLAP vs OLTP)</h3>
+            <p>In analytical BI reporting (aggregating 1 billion sales rows), row-oriented storage (PostgreSQL) reads all 50 columns from disk into RAM just to access 1 salary integer! <span class="hl hl-blue">Columnar Storage (Parquet, ClickHouse, Snowflake)</span> stores values of a single column contiguously across disk blocks, cutting disk I/O by 90% and enabling SIMD vectorization!</p>
+
+            <h3>8.3 Bloom Filters in Storage Engines</h3>
+            <p>A <span class="hl hl-yellow">Bloom Filter</span> is a space-efficient probabilistic bit array stored in RAM in front of every disk file. In ~10 nanoseconds, it answers either <strong>"Definitely NOT present!"</strong> (skipping zero-value disk seeks!) or <strong>"Possibly present!"</strong> (with a tiny 1% false positive rate).</p>
+        </section>
+    </main>
+</div>
+
+</body>
+</html>

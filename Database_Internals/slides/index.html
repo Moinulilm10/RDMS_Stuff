@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 3 Interactive Storage Engine & B+ Tree Sandbox</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #070a12;
+            --bg-sidebar: #111726;
+            --bg-card: #1a2236;
+            --bg-code: #0b0f19;
+            --accent: #f59e0b;
+            --accent-glow: rgba(245, 158, 11, 0.35);
+            --cyan: #38bdf8;
+            --green: #34d399;
+            --yellow: #fcd34d;
+            --pink: #ec4899;
+            --purple: #a855f7;
+            --red: #f87171;
+            --text: #f8fafc;
+            --text2: #94a3b8;
+            --border: #28324a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 340px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #fcd34d, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-home {
+            color: var(--text2);
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .nav-home:hover { color: #fff; background: var(--accent); }
+
+        .chapter-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+        }
+
+        .chapter-group { margin-bottom: 1.2rem; }
+        .chapter-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--yellow);
+            padding: 0.4rem 0.6rem;
+            font-weight: 800;
+        }
+
+        .slide-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text2);
+            font-size: 0.85rem;
+            transition: all 0.15s;
+            margin-bottom: 3px;
+        }
+
+        .slide-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+        .slide-item.active { background: rgba(245, 158, 11, 0.2); color: #fff; border-left: 3px solid var(--accent); font-weight: 700; }
+        .slide-num { font-size: 0.75rem; opacity: 0.6; width: 24px; }
+
+        /* Main Workspace */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: 60px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.75rem;
+            background: var(--bg-sidebar);
+        }
+
+        .slide-header-text h2 { font-size: 1.2rem; font-weight: 800; color: #fff; }
+        .slide-header-text span { font-size: 0.82rem; color: var(--text2); }
+
+        .engine-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--cyan);
+            font-weight: 700;
+        }
+
+        .content-area {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            overflow: hidden;
+        }
+
+        /* Theory & Visual Pane */
+        .theory-pane {
+            padding: 2.25rem;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            line-height: 1.7;
+        }
+
+        .section-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+        .badge-prob { background: rgba(248, 113, 113, 0.15); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.3); }
+        .badge-sol { background: rgba(52, 211, 153, 0.15); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.3); }
+        .badge-real { background: rgba(56, 189, 248, 0.15); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .badge-senior { background: rgba(245, 158, 11, 0.15); color: var(--yellow); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        .theory-pane h3 { font-size: 1.3rem; margin: 1.5rem 0 0.75rem; color: #fff; font-weight: 800; }
+        .theory-pane h3:first-child { margin-top: 0; }
+        .theory-pane p { margin-bottom: 1.1rem; color: #cbd5e1; font-size: 0.95rem; }
+        .theory-pane ul, .theory-pane ol { margin: 0 0 1.2rem 1.5rem; color: #cbd5e1; font-size: 0.95rem; }
+        .theory-pane li { margin-bottom: 0.45rem; }
+
+        .diagram-box {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin: 1.25rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: var(--cyan);
+            white-space: pre;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        .problem-box {
+            background: rgba(248, 113, 113, 0.08);
+            border-left: 4px solid var(--red);
+            padding: 1.1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+        }
+        .problem-box strong { color: var(--red); display: block; margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+        .solution-box {
+            background: rgba(52, 211, 153, 0.08);
+            border-left: 4px solid var(--green);
+            padding: 1.1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+        }
+        .solution-box strong { color: var(--green); display: block; margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+        .scenario-box {
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 4px solid var(--yellow);
+            padding: 1.1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+        }
+        .scenario-box strong { color: var(--yellow); display: block; margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+        /* Interactive Sandbox Pane */
+        .sandbox-pane {
+            display: flex;
+            flex-direction: column;
+            background: #070a12;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            padding: 0.7rem 1.2rem;
+            background: #111726;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text2);
+            font-weight: 700;
+        }
+
+        .sql-editor {
+            flex: 1;
+            background: var(--bg-code);
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.87rem;
+            padding: 1.25rem;
+            border: none;
+            resize: none;
+            outline: none;
+            line-height: 1.6;
+        }
+
+        .editor-actions {
+            padding: 0.75rem 1.2rem;
+            background: #111726;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-run {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0.55rem 1.4rem;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px var(--accent-glow);
+        }
+        .btn-run:hover { background: #fbbf24; transform: translateY(-1px); }
+
+        .btn-reset {
+            background: transparent;
+            color: var(--text2);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-reset:hover { color: #fff; border-color: var(--text2); }
+
+        .results-area {
+            height: 45%;
+            background: #070a12;
+            overflow: auto;
+            padding: 1.2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 1rem;
+        }
+
+        th, td {
+            padding: 0.65rem 0.85rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #111726;
+            color: var(--yellow);
+            position: sticky;
+            top: 0;
+            font-weight: 700;
+        }
+
+        td { color: #cbd5e1; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .status-msg {
+            font-size: 0.86rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-success { background: rgba(52, 211, 153, 0.12); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.25); }
+        .status-error { background: rgba(248, 113, 113, 0.12); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.25); }
+
+        @media (max-width: 1100px) {
+            .content-area { grid-template-columns: 1fr; }
+            .sidebar { width: 280px; }
+        }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h1>⚙️ Engine Studio</h1>
+        <a href="../index.html" class="nav-home">Hub</a>
+    </div>
+    <div class="chapter-list" id="chapterList"></div>
+</aside>
+
+<main class="main">
+    <header class="topbar">
+        <div class="slide-header-text">
+            <h2 id="slideTitle">Loading Internals...</h2>
+            <span id="slideSubtitle">Senior/Staff Engineering Deep Dive</span>
+        </div>
+        <div class="engine-badge">
+            ⚡ SQLite WASM Storage Engine Active
+        </div>
+    </header>
+
+    <div class="content-area">
+        <div class="theory-pane" id="theoryPane"></div>
+        <div class="sandbox-pane">
+            <div class="editor-header">
+                <span>💻 ENGINE INSPECTION & EXECUTION SANDBOX</span>
+                <span>Ctrl + Enter to Execute</span>
+            </div>
+            <textarea class="sql-editor" id="sqlEditor" spellcheck="false"></textarea>
+            <div class="editor-actions">
+                <button class="btn-reset" onclick="resetCurrentSlide()">🔄 Reset Clean Engine State</button>
+                <button class="btn-run" onclick="runSQL()">▶ Execute Engine Script</button>
+            </div>
+            <div class="results-area" id="resultsArea">
+                <div class="status-msg status-success">Ready to inspect database engine internals...</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+let db = null;
+let currentChapterIdx = 0;
+let currentSlideIdx = 0;
+
+const chapters = [
+// ────────────────────────────────────────────────────────
+// CHAPTER 1: THE LIFECYCLE OF A SQL QUERY
+// ────────────────────────────────────────────────────────
+{
+    title: "1. The Query Lifecycle",
+    slides: [
+        {
+            title: "What Happens After SELECT * FROM users?",
+            subtitle: "The journey of a SQL query through the RDBMS engine",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>When a junior engineer writes a query, they treat the database like a magical black box. When queries time out under 10,000 requests/sec, they don't know if the bottleneck is parsing overhead, poor selectivity estimation, buffer pool thrashing, or disk I/O waits.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>An enterprise RDBMS executes a strict 5-stage pipeline when you send <code>SELECT * FROM users WHERE id = 42;</code>:</p>
+                <div class="diagram-box">[ 1. SQL Parser ] ===> Translates text string into Abstract Syntax Tree (AST).
+       ||
+[ 2. Analyzer   ] ===> Validates table/column names against System Catalog & checks IAM permissions.
+       ||
+[ 3. Planner    ] ===> Cost-Based Optimizer (CBO) evaluates statistics & generates execution plans.
+       ||
+[ 4. Executor   ] ===> Pulls tuples using Volcano Iterator Model (open -> next -> close).
+       ||
+[ 5. Storage    ] ===> Fetches 4KB/8KB pages from Buffer Pool (RAM) or Disk Storage!</div>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>💡 Prepared Statements & Plan Caching</strong>
+                    In high-concurrency systems (Uber, Stripe), parsing and optimizing SQL on every request consumes up to 30% of database CPU! Using Prepared Statements (<code>PREPARE stmt FROM ...</code>) compiles the AST and caches the execution plan once, bypassing stages 1-3 on subsequent executions!
+                </div>
+            `,
+            sql: `-- Step 1: Inspecting how the SQLite Query Planner optimizes a scan
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    tier TEXT DEFAULT 'free',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO users (email, tier) VALUES 
+('alice@stripe.com', 'pro'),
+('bob@uber.com', 'enterprise'),
+('charlie@google.com', 'free');
+
+-- Execute EXPLAIN QUERY PLAN to see the exact execution strategy:
+-- Notice how searching by PRIMARY KEY uses an instant B-Tree lookup!
+EXPLAIN QUERY PLAN SELECT * FROM users WHERE id = 2;`
+        },
+        {
+            title: "Cost-Based Optimizer (CBO) & Statistics",
+            subtitle: "How the database calculates cardinality and selectivity",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Why does the database sometimes ignore your index and perform a Full Table Scan? If an index scan requires seeking 80% of the rows in a table, jumping back and forth between the index B+ Tree and the data heap (random I/O) takes 10x longer than just sequentially scanning the physical disk blocks!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>The <strong>Cost-Based Optimizer (CBO)</strong> calculates expected disk I/O and CPU cost using statistical histograms stored in system tables (e.g., <code>pg_stats</code> or <code>sqlite_stat1</code>):</p>
+                <ul>
+                    <li><strong>Selectivity:</strong> The fraction of rows matching a filter (<code>matching_rows / total_rows</code>).</li>
+                    <li><strong>Cardinality:</strong> The number of unique distinct values in a column.</li>
+                    <li><strong>The Golden Rule:</strong> If selectivity is high (&lt; 5% to 10% of table), CBO chooses an <strong>Index Scan</strong>. If selectivity is low (&gt; 20% of table), CBO chooses a sequential <strong>Full Table Scan</strong>!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>📊 Stale Statistics & ANALYZE</strong>
+                    After bulk inserting 50 million rows, table statistics become stale. The CBO might think the table is empty and choose catastrophic nested loop joins! Senior engineers schedule automated <code>ANALYZE</code> or <code>VACUUM ANALYZE</code> tasks to keep histograms fresh.
+                </div>
+            `,
+            sql: `-- Step 1: Create table with indexed column
+DROP TABLE IF EXISTS orders_cbo;
+CREATE TABLE orders_cbo (
+    order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    status TEXT NOT NULL,
+    amount DECIMAL(10,2)
+);
+
+CREATE INDEX idx_orders_status ON orders_cbo(status);
+
+-- Step 2: Insert 10 rows (9 'completed', 1 'pending')
+INSERT INTO orders_cbo (status, amount) VALUES 
+('completed', 10.00), ('completed', 20.00), ('completed', 30.00),
+('completed', 40.00), ('completed', 50.00), ('completed', 60.00),
+('completed', 70.00), ('completed', 80.00), ('completed', 90.00),
+('pending', 999.00);
+
+-- Step 3: Run ANALYZE to compute table histograms
+ANALYZE orders_cbo;
+
+-- Querying the rare 'pending' status (10% selectivity) -> Uses INDEX!
+EXPLAIN QUERY PLAN SELECT * FROM orders_cbo WHERE status = 'pending';`
+        },
+        {
+            title: "Execution Models: Volcano Iterator vs Vectorized",
+            subtitle: "Tuple-at-a-time processing vs SIMD columnar batching",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>In analytical OLAP queries (aggregating 1 billion sales rows), traditional row-based database engines (PostgreSQL, MySQL) consume massive CPU time just making virtual function calls for every single row.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Volcano Iterator Model (OLTP):</strong> Every operator (Scan, Filter, Join) implements an <code>open()</code>, <code>next()</code>, and <code>close()</code> interface. It pulls one tuple at a time. High CPU function overhead, but extremely low memory footprint!</li>
+                    <li><strong>Vectorized Execution (OLAP / ClickHouse / Snowflake):</strong> Operators process blocks of 1,024 or 4,096 tuples per <code>next()</code> call! This fits data directly into CPU L1/L2 caches and leverages SIMD (Single Instruction, Multiple Data) vector instructions for 100x speedups!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>⚙️ Choosing the Right Execution Engine</strong>
+                    Never run heavy multi-billion row BI aggregations on an OLTP Volcano engine (PostgreSQL). Stream analytical events into a Vectorized Columnar engine (ClickHouse, BigQuery, Snowflake) where SIMD instructions shine!
+                </div>
+            `,
+            sql: `-- Simulating Volcano Iterator execution vs Aggregation:
+DROP TABLE IF EXISTS stream_metrics;
+CREATE TABLE stream_metrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    metric_val INTEGER NOT NULL
+);
+
+INSERT INTO stream_metrics (metric_val) VALUES (10), (20), (30), (40), (50);
+
+-- Notice how SQLite (an iterator model) evaluates aggregate SUM and COUNT:
+SELECT COUNT(*) AS total_tuples, SUM(metric_val) AS sum_val, AVG(metric_val) AS avg_val
+FROM stream_metrics;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 2: MEMORY & BUFFER POOL
+// ────────────────────────────────────────────────────────
+{
+    title: "2. Memory & Buffer Pool",
+    slides: [
+        {
+            title: "RAM vs Disk Hierarchy & The Buffer Pool",
+            subtitle: "Why databases cache disk blocks in memory pages",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Reading data from a physical disk (even an NVMe SSD) takes ~100,000 nanoseconds. Reading from RAM takes ~100 nanoseconds. If a database had to read from disk on every SQL query, system throughput would collapse to 1,000 queries per second!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>The <strong>Buffer Pool</strong> is an in-memory cache managed directly by the database storage engine. It partitions RAM into fixed-size frames (typically <strong>4KB, 8KB, or 16KB</strong>) that mirror physical disk pages:</p>
+                <div class="diagram-box">[ SQL Query ] ===&gt; Requests Page #42
+     ||
+[ Buffer Pool Lookup ]
+     |-- (HIT!)  ===&gt; Return pointer to RAM memory frame in 100ns! ⚡
+     |-- (MISS!) ===&gt; Fetch 8KB block from Disk SSD into empty RAM frame (~100,000ns)</div>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>📈 Buffer Pool Hit Ratio Monitoring</strong>
+                    In production (PostgreSQL/MySQL), senior engineers alert if the Buffer Pool Hit Ratio drops below <strong>99.0%</strong>! A hit ratio of 95% means 1 out of every 20 queries is stalling on slow disk I/O, indicating RAM is under-provisioned!
+                </div>
+            `,
+            sql: `-- Step 1: Inspect SQLite Buffer Pool & Page Size settings
+-- SQLite default page size is 4096 bytes (4KB):
+PRAGMA page_size;
+
+-- Check current buffer pool cache size (in number of pages):
+PRAGMA cache_size;
+
+-- Step 2: Create a sample table to see page allocation
+DROP TABLE IF EXISTS buffer_test;
+CREATE TABLE buffer_test (id INT PRIMARY KEY, payload TEXT);
+INSERT INTO buffer_test VALUES (1, 'Cached in Buffer Pool RAM!');
+
+-- Check total disk pages allocated by this database:
+PRAGMA page_count;`
+        },
+        {
+            title: "Eviction Policies: LRU vs Clock Sweep vs LRU-K",
+            subtitle: "Preventing analytical queries from wiping out cached working sets",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>When the Buffer Pool is full and a new page is read from disk, an existing page must be evicted. Under basic <strong>Least Recently Used (LRU)</strong>, if a data analyst runs <code>SELECT * FROM historical_logs</code> (scanning 500GB of cold data), every hot production page is flushed out! The entire database stalls after the query!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>Modern RDBMS use advanced eviction algorithms with <strong>Sequential Scan Resistance</strong>:</p>
+                <ul>
+                    <li><strong>Clock Sweep / Midpoint Insertion (InnoDB):</strong> Divides buffer pool into a "New Sublist" (top 63%) and "Old Sublist" (bottom 37%). New pages from disk enter at the midpoint! They only get promoted to the hot sublist if they are accessed a *second* time!</li>
+                    <li><strong>LRU-K / 2Q (PostgreSQL):</strong> Tracks the time of the last $K$ accesses. A page must be hit multiple times before being granted long-term residence in RAM.</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🛡️ Isolating Analytics from OLTP</strong>
+                    To prevent buffer pool pollution, never run ad-hoc full table scans on the primary read/write database node! Route heavy analytical queries to read-only replicas or data warehouses.
+                </div>
+            `,
+            sql: `-- Simulating Buffer Pool Cache Tuning in SQLite:
+-- Set cache size to a small number of pages (e.g., 500 pages = ~2MB RAM):
+PRAGMA cache_size = 500;
+
+DROP TABLE IF EXISTS cache_eviction_demo;
+CREATE TABLE cache_eviction_demo (
+    id INTEGER PRIMARY KEY,
+    data_chunk TEXT
+);
+
+-- Insert records to fill memory pages:
+INSERT INTO cache_eviction_demo VALUES (1, 'Hot OLTP Working Set Row');
+INSERT INTO cache_eviction_demo VALUES (2, 'Cold Analytical Archive Row');
+
+SELECT * FROM cache_eviction_demo;`
+        },
+        {
+            title: "Dirty Pages, Pinning & Background Flushing",
+            subtitle: "How modified RAM pages are safely persisted to disk",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>When an SQL statement updates a row (<code>UPDATE users SET balance = 500</code>), writing physical disk blocks immediately would slow transactions to a crawl. But if modified data only lives in RAM, what happens when someone pulls the server power cord?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Dirty Page:</strong> A buffer pool memory frame that has been modified in RAM but not yet written to physical disk.</li>
+                    <li><strong>Pinning:</strong> When an active thread is reading or modifying a page, it increments a "pin count" (latch). An evicted page cannot be removed while pinned!</li>
+                    <li><strong>Background Checkpoint Threads:</strong> Dedicated background worker threads (e.g., PostgreSQL <code>bgwriter</code> or InnoDB Buffer Pool Flusher) continuously wake up, find dirty pages, and write them to disk asynchronously using sorted sequential I/O!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>⚠️ Checkpoint Spikes & I/O Stalls</strong>
+                    If checkpoint flushing is configured too aggressively, writing thousands of dirty pages simultaneously floods disk I/O channels, causing query latency spikes (checkpoint jitter). Senior engineers tune smooth, continuous background flushing!
+                </div>
+            `,
+            sql: `-- Inspecting database integrity & freelist page management:
+DROP TABLE IF EXISTS dirty_page_test;
+CREATE TABLE dirty_page_test (id INT PRIMARY KEY, val TEXT);
+
+INSERT INTO dirty_page_test VALUES (10, 'Initial Value');
+-- When we UPDATE, the page in Buffer Pool becomes DIRTY:
+UPDATE dirty_page_test SET val = 'Modified Dirty Page Value' WHERE id = 10;
+
+-- Check database freelist pages (unused pages available for re-use):
+PRAGMA freelist_count;
+SELECT * FROM dirty_page_test;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 3: DISK STORAGE & PAGE ANATOMY
+// ────────────────────────────────────────────────────────
+{
+    title: "3. Disk Storage & Pages",
+    slides: [
+        {
+            title: "Slotted Page Architecture",
+            subtitle: "How variable-length rows are physically organized inside an 8KB page",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Rows in a table have variable lengths (e.g., <code>VARCHAR(255)</code> might be 5 bytes or 250 bytes). If rows were packed sequentially without structure, deleting row #2 would leave an ugly empty hole in the middle of the disk block! How does the database find row #3 or reuse empty space?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>All major relational engines (PostgreSQL, MySQL/InnoDB, SQLite) use <strong>Slotted Page Architecture</strong> inside each 4KB/8KB physical block:</p>
+                <div class="diagram-box">+-----------------------------------------------------------------+
+| PAGE HEADER (LSN, Flags, Free Space Pointer, Tuple Count)       |
++-----------------------------------------------------------------+
+| LINE POINTERS / SLOT ARRAY (grows DOWNWARDS ---&gt;)              |
+| [Slot 1: Offset 8000] [Slot 2: Offset 7850] [Slot 3: Offset...] |
++-----------------------------------------------------------------+
+|                        &lt;--- FREE SPACE ---&gt;                     |
++-----------------------------------------------------------------+
+| [Tuple 3 Data] [Tuple 2 Data] [Tuple 1 Data] (grows UPWARDS &lt;--)|
++-----------------------------------------------------------------+</div>
+                <ul>
+                    <li><strong>Line Pointers (Slot Array):</strong> Fixed-size pointers at the top of the page growing downwards. An index references a tuple via its <strong>Row ID (RID = Page# + Slot#)</strong>.</li>
+                    <li><strong>Tuple Data:</strong> Actual row data inserted at the bottom of the page growing upwards!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>💡 Why Slotted Pages Prevent Index Rewrites</strong>
+                    When a tuple is updated or moved within the same page during compaction, ONLY the offset integer inside the Line Pointer changes! The Row ID (Page# + Slot#) remains identical, meaning zero B+ Tree secondary indexes need to be updated!
+                </div>
+            `,
+            sql: `-- Step 1: Create table with variable-length strings
+DROP TABLE IF EXISTS slotted_page_demo;
+CREATE TABLE slotted_page_demo (
+    tuple_slot INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_bio VARCHAR(500)
+);
+
+INSERT INTO slotted_page_demo (user_bio) VALUES 
+('Short bio'),
+('A much longer variable length biography string filling up space inside the slotted page architecture!'),
+('Medium length text');
+
+-- Verify stored tuples:
+SELECT tuple_slot, user_bio, length(user_bio) AS byte_length FROM slotted_page_demo;`
+        },
+        {
+            title: "Blocks, Pages & Heap Files",
+            subtitle: "Why database engines align with OS filesystem block boundaries",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Why don't databases read individual bytes or arbitrary chunks from disk? Why always fixed 4KB, 8KB, or 16KB pages?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>OS &amp; SSD Alignment:</strong> Operating systems read files in 4KB memory pages. Solid State Drives (SSDs) read/write data in 4KB or 8KB NAND flash pages! Aligning database pages with SSD hardware blocks guarantees atomic reads and prevents read-modify-write amplification!</li>
+                    <li><strong>Heap File:</strong> An unordered collection of physical data pages. When you do <code>INSERT INTO users</code>, the storage engine finds any physical page with enough Free Space and drops the tuple there!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>⚠️ Page Size Mismatch & Torn Pages</strong>
+                    If MySQL InnoDB uses 16KB pages but the OS filesystem writes in 4KB chunks, a power outage halfway through writing a 16KB page results in a "Torn Page" (half old data, half new data). To survive torn pages, InnoDB uses the <strong>Doublewrite Buffer</strong>!
+                </div>
+            `,
+            sql: `-- Inspecting physical storage stats in SQLite:
+DROP TABLE IF EXISTS heap_file_demo;
+CREATE TABLE heap_file_demo (id INT PRIMARY KEY, payload TEXT);
+
+INSERT INTO heap_file_demo VALUES (1, 'Block 1 Data'), (2, 'Block 2 Data');
+
+-- Query internal SQLite page statistics:
+PRAGMA page_count;
+PRAGMA freelist_count;`
+        },
+        {
+            title: "Tuple Header Anatomy & MVCC Visibility",
+            subtitle: "What hidden metadata is stored in front of every single row",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>How does PostgreSQL know if a row was deleted by an uncommitted transaction or if it should be visible to your concurrent query?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>Every single row (tuple) on disk begins with a mandatory <strong>Tuple Header</strong> (23+ bytes in PostgreSQL):</p>
+                <ul>
+                    <li><code>xmin</code>: The Transaction ID (TXID) that inserted this tuple.</li>
+                    <li><code>xmax</code>: The Transaction ID (TXID) that deleted or updated this tuple (0 if active/alive!).</li>
+                    <li><code>t_ctid</code>: Tuple identifier (Page# + Slot#) pointing to an updated newer version of this row!</li>
+                    <li><strong>NULL Bitmap:</strong> A bit array where each bit represents whether a column is NULL (saving disk space by storing zero bytes for NULL values!).</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>💾 Tuple Header Overhead</strong>
+                    In PostgreSQL, if you create a table with two 2-byte integers (<code>SMALLINT</code>), the actual data is 4 bytes, but the Tuple Header adds 24 bytes! That is 85% metadata storage overhead! In ultra-high scale systems, senior engineers group columns wisely and avoid excessive small tables.
+                </div>
+            `,
+            sql: `-- Simulating Tuple Metadata tracking:
+DROP TABLE IF EXISTS tuple_metadata_demo;
+CREATE TABLE tuple_metadata_demo (
+    id INTEGER PRIMARY KEY,
+    val TEXT,
+    -- Simulating hidden system visibility columns:
+    sys_xmin INTEGER DEFAULT 1001,
+    sys_xmax INTEGER DEFAULT 0
+);
+
+INSERT INTO tuple_metadata_demo (id, val) VALUES (1, 'Active Tuple (xmax=0)');
+
+-- Simulating an UPDATE in MVCC (old tuple gets xmax set, new tuple inserted!):
+UPDATE tuple_metadata_demo SET sys_xmax = 1002 WHERE id = 1;
+INSERT INTO tuple_metadata_demo (id, val, sys_xmin, sys_xmax) VALUES (1, 'Updated New Tuple Version', 1002, 0);
+
+SELECT * FROM tuple_metadata_demo;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 4: B+ TREE INDEXING & SEARCH MECHANICS
+// ────────────────────────────────────────────────────────
+{
+    title: "4. B+ Tree Indexing",
+    slides: [
+        {
+            title: "Why B+ Trees? Branching Factor vs Height",
+            subtitle: "Why relational databases reject Binary Trees and B-Trees",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>In a standard Binary Search Tree (BST), each node has only 2 children. Indexing 20 million rows creates a tree height of $log_2(20,000,000) \\approx 24$ levels! Traversing 24 levels requires 24 random disk seeks ($24 \\times 10ms = 240ms$ per lookup!).</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>A <strong>B+ Tree</strong> is an N-ary balanced search tree optimized specifically for disk block sizes:</p>
+                <ul>
+                    <li><strong>High Branching Factor (N):</strong> An 8KB index node can store ~500 child pointers!</li>
+                    <li><strong>Ultra-Low Tree Height:</strong> With branching factor $N=500$, a 3-level tree indexes $500 \\times 500 \\times 500 = 125,000,000$ records! Finding any record takes at most <strong>3 disk seeks</strong>!</li>
+                    <li><strong>Why B+ Tree over B-Tree?</strong> In a B+ Tree, internal nodes store ONLY keys and pointers. Actual row data lives strictly in the <strong>Leaf Nodes</strong>. Furthermore, Leaf Nodes are linked via a <strong>Doubly Linked List</strong>, making range queries (<code>WHERE id BETWEEN 100 AND 5000</code>) blazing fast sequential scans!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🌳 Root Node Pinning</strong>
+                    In production databases, the Root Node and Level 1 internal nodes of a B+ Tree are permanently pinned in the Buffer Pool RAM! Therefore, accessing a 100-million row table requires only <strong>1 physical disk read</strong> (fetching the leaf node)!
+                </div>
+            `,
+            sql: `-- Step 1: Create indexed table and inspect query plan
+DROP TABLE IF EXISTS btree_demo;
+CREATE TABLE btree_demo (
+    user_id INTEGER PRIMARY KEY,
+    username TEXT NOT NULL,
+    score INTEGER NOT NULL
+);
+
+CREATE INDEX idx_btree_score ON btree_demo(score);
+
+INSERT INTO btree_demo VALUES (101, 'Ada', 9500), (102, 'Alan', 8200), (103, 'Linus', 9900);
+
+-- Notice how range query utilizes B+ Tree leaf linked list:
+EXPLAIN QUERY PLAN SELECT username, score FROM btree_demo WHERE score BETWEEN 8000 AND 9600;`
+        },
+        {
+            title: "Clustered vs Non-Clustered Indexes",
+            subtitle: "Physical table ordering vs secondary index lookup pointers",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>When you create an index on <code>email</code>, where does the physical row data live? If every index stored a complete duplicate copy of all 50 table columns, your database size would balloon by 10x!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Clustered Index (InnoDB Primary Key / SQLite INTEGER PRIMARY KEY):</strong> The leaf nodes of the B+ Tree contain the <strong>actual physical row data</strong>! A table can have ONLY ONE clustered index because data can only be physically sorted on disk in one order.</li>
+                    <li><strong>Non-Clustered Secondary Index:</strong> The leaf nodes store the indexed column value plus a pointer back to the primary record (either the Primary Key in InnoDB, or the Row ID in PostgreSQL).</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>⚠️ Secondary Index Double Lookups (Key Lookups)</strong>
+                    In MySQL InnoDB, querying via a secondary index (<code>WHERE email = '...'</code>) requires two tree traversals: first search the email B+ Tree to find <code>user_id=42</code>, then traverse the Primary Key Clustered B+ Tree to fetch the row data! This double traversal is why Covering Indexes are critical!
+                </div>
+            `,
+            sql: `-- Step 1: Clustered vs Secondary Index lookup demonstration
+DROP TABLE IF EXISTS clustered_demo;
+CREATE TABLE clustered_demo (
+    emp_id INTEGER PRIMARY KEY, -- Clustered index anchor
+    email TEXT UNIQUE,          -- Secondary index
+    dept TEXT
+);
+
+INSERT INTO clustered_demo VALUES (1, 'alice@corp.com', 'Engineering'), (2, 'bob@corp.com', 'Sales');
+
+-- Query by Primary Key -> Single Clustered B-Tree lookup:
+EXPLAIN QUERY PLAN SELECT * FROM clustered_demo WHERE emp_id = 1;
+
+-- Query by Secondary Email Index -> Uses secondary index:
+EXPLAIN QUERY PLAN SELECT * FROM clustered_demo WHERE email = 'alice@corp.com';`
+        },
+        {
+            title: "Page Splits, Merges & Latching",
+            subtitle: "The mechanics of inserting into a full B+ Tree leaf node",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>What happens when you insert a new record into an 8KB B+ Tree leaf node that is already 100% full? If the engine blocked all table reads while reorganizing the tree, concurrent traffic would experience massive latency spikes!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Page Split:</strong> When a leaf node overflows, the storage engine allocates a new 8KB page, moves half the keys to the new page, inserts a new separator key into the parent internal node, and updates the doubly linked list pointers!</li>
+                    <li><strong>Latching vs Locking:</strong> Locks protect logical database contents (rows/tables) for the duration of a transaction. <strong>Latches</strong> are lightweight internal mutexes held for microseconds to protect physical memory structures (B+ Tree pages) during page splits!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🔥 Random UUID Page Split Thrashing</strong>
+                    Why do senior engineers forbid random UUIDv4 as Primary Keys in MySQL InnoDB? Because random UUIDs insert anywhere across the B+ Tree! This triggers endless 8KB Page Splits, causes 50% index fragmentation bloat, and forces random disk I/O! Always use sequential UUIDv7 or ULID!
+                </div>
+            `,
+            sql: `-- Simulating sequential vs random key insertion impact:
+DROP TABLE IF EXISTS page_split_demo;
+CREATE TABLE page_split_demo (
+    seq_id INTEGER PRIMARY KEY,
+    payload TEXT
+);
+
+-- Inserting sequential IDs appends cleanly to the rightmost leaf node:
+INSERT INTO page_split_demo VALUES (1, 'Page 1'), (2, 'Page 1'), (3, 'Page 1');
+
+-- Inspecting database structure:
+SELECT * FROM page_split_demo;`
+        },
+        {
+            title: "Covering Indexes & Index-Only Scans",
+            subtitle: "Eliminating disk heap lookups by answering queries purely from index leaves",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>If you execute <code>SELECT username, status FROM users WHERE status = 'active'</code>, even with an index on <code>status</code>, the engine must jump from the index leaf node back to the table heap (random I/O) to fetch the <code>username</code> column!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>A <strong>Covering Index</strong> includes all columns requested in the <code>SELECT</code> and <code>WHERE</code> clauses within the index leaf node itself (e.g., <code>CREATE INDEX idx_status_user ON users(status, username);</code> or PostgreSQL <code>INCLUDE</code> clause):</p>
+                <div class="diagram-box">[ Query: SELECT username FROM users WHERE status = 'active' ]
+     ||
+[ B+ Tree Index on (status, username) ]
+     |-- Leaf Node contains: ('active', 'alice'), ('active', 'bob')
+     |-- ZERO Table Heap lookups needed! (INDEX-ONLY SCAN ⚡)</div>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🚀 10x Read Acceleration</strong>
+                    In high-throughput APIs (e.g., checking user login status or OAuth scopes), creating a covering index converts slow Index Key Lookups into instant <strong>Index-Only Scans</strong>, eliminating 50% of physical disk I/O!
+                </div>
+            `,
+            sql: `-- Step 1: Demonstrate Covering Index behavior
+DROP TABLE IF EXISTS covering_demo;
+CREATE TABLE covering_demo (
+    user_id INT PRIMARY KEY,
+    email TEXT,
+    status TEXT,
+    bio TEXT
+);
+
+-- Create a composite covering index on (status, email):
+CREATE INDEX idx_status_email ON covering_demo(status, email);
+
+INSERT INTO covering_demo VALUES (1, 'dev@google.com', 'active', 'Long bio blob text...');
+
+-- Query requesting ONLY indexed columns -> Utilizes Covering Index!
+EXPLAIN QUERY PLAN SELECT email FROM covering_demo WHERE status = 'active';`
+        },
+        {
+            title: "Composite Indexes & The Leftmost Prefix Rule",
+            subtitle: "Why column order in multi-column indexes dictates query speed",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>A junior engineer creates <code>CREATE INDEX idx_user_state_city ON users(state, city);</code> and expects it to speed up <code>SELECT * FROM users WHERE city = 'Austin';</code>. Instead, the query takes 15 seconds doing a Full Table Scan! Why?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>A composite index sorts keys hierarchically from left to right (like a telephone directory sorted by Last Name, then First Name):</p>
+                <ul>
+                    <li><strong>The Leftmost Prefix Rule:</strong> An index on <code>(A, B, C)</code> can accelerate queries filtering on <code>(A)</code>, <code>(A, B)</code>, or <code>(A, B, C)</code>. It CANNOT accelerate queries filtering strictly on <code>(B)</code> or <code>(C)</code> because without filtering on A first, B and C are scattered randomly across the tree!</li>
+                    <li><strong>Range Filter Stop:</strong> In <code>WHERE A = 1 AND B &gt; 5 AND C = 10</code>, the B+ Tree seeks cleanly through A and B, but cannot use index sorting for C after the range inequality on B!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🎯 Equality First, Range Last</strong>
+                    When designing composite indexes, senior engineers strictly place exact equality columns first, and range filter columns (<code>BETWEEN</code>, <code>&gt;</code>, <code>&lt;</code>) last!
+                </div>
+            `,
+            sql: `-- Step 1: Create composite index on (state, city)
+DROP TABLE IF EXISTS location_demo;
+CREATE TABLE location_demo (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    state TEXT,
+    city TEXT,
+    zip TEXT
+);
+
+CREATE INDEX idx_state_city ON location_demo(state, city);
+
+INSERT INTO location_demo (state, city, zip) VALUES 
+('TX', 'Austin', '78701'),
+('CA', 'San Francisco', '94105'),
+('NY', 'New York', '10001');
+
+-- 1. Query filtering LEFTMOST column (state) -> USES INDEX!
+EXPLAIN QUERY PLAN SELECT * FROM location_demo WHERE state = 'TX';
+
+-- 2. Query filtering BOTH leftmost columns -> USES INDEX!
+EXPLAIN QUERY PLAN SELECT * FROM location_demo WHERE state = 'TX' AND city = 'Austin';
+
+-- 3. Query filtering ONLY second column (city) -> FULL TABLE SCAN!
+EXPLAIN QUERY PLAN SELECT * FROM location_demo WHERE city = 'Austin';`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 5: CONCURRENCY CONTROL & MVCC
+// ────────────────────────────────────────────────────────
+{
+    title: "5. Concurrency & MVCC",
+    slides: [
+        {
+            title: "Multi-Version Concurrency Control (MVCC)",
+            subtitle: "Why readers don't block writers and writers don't block readers",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>In primitive databases (legacy SQLite or older systems), when a financial report query spends 5 minutes reading the <code>orders</code> table, it acquires a global read lock. All concurrent customer checkouts attempting to write new orders freeze for 5 minutes!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p><strong>MVCC (Multi-Version Concurrency Control)</strong> eliminates read-write lock contention by creating immutable historical row snapshots:</p>
+                <ul>
+                    <li><strong>Readers don't block writers, writers don't block readers!</strong></li>
+                    <li>When a transaction updates row #10, it does NOT overwrite physical disk memory! Instead, it inserts a brand new tuple version with timestamp <code>xmin = current_txid</code>, and marks the old tuple with <code>xmax = current_txid</code>.</li>
+                    <li>Concurrent read queries inspect tuple headers and ignore any versions created after their transaction snapshot began!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🛡️ Snapshot Isolation vs Serializable</strong>
+                    MVCC provides Repeatable Read and Snapshot Isolation effortlessly. However, to prevent complex Write Skew anomalies in banking ledgers, senior engineers explicitly request <code>SERIALIZABLE</code> isolation or use <code>SELECT ... FOR UPDATE</code> row locks!
+                </div>
+            `,
+            sql: `-- Simulating MVCC versioning behavior in SQL:
+DROP TABLE IF EXISTS mvcc_accounts;
+CREATE TABLE mvcc_accounts (
+    account_id INT PRIMARY KEY,
+    balance DECIMAL(10,2),
+    -- Simulating PostgreSQL MVCC visibility metadata:
+    version_num INT DEFAULT 1,
+    is_latest BOOLEAN DEFAULT true
+);
+
+INSERT INTO mvcc_accounts VALUES (101, 1000.00, 1, true);
+
+-- In MVCC, an update creates a new row and marks old row as historical:
+UPDATE mvcc_accounts SET is_latest = false WHERE account_id = 101 AND is_latest = true;
+INSERT INTO mvcc_accounts VALUES (101, 1500.00, 2, true);
+
+-- Queries see only the latest committed snapshot version:
+SELECT account_id, balance, version_num FROM mvcc_accounts WHERE is_latest = true;`
+        },
+        {
+            title: "Write Amplification & Bloat (VACUUM)",
+            subtitle: "Managing dead tuples generated by out-of-place MVCC updates",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Because MVCC never overwrites old data in place, updating a row 10,000 times creates 1 alive tuple and 9,999 dead tuples! Without cleanup, table size bloats from 100MB to 50GB, causing sequential scans and index lookups to become 100x slower!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Dead Tuples:</strong> Historical row versions whose <code>xmax</code> is older than the oldest active transaction in the database. No running query will ever need them again!</li>
+                    <li><strong>PostgreSQL VACUUM / Autovacuum:</strong> Background worker processes scan pages, remove dead tuple line pointers, and make free space available for new inserts!</li>
+                    <li><strong>VACUUM FULL:</strong> Rebuilds the entire table from scratch on disk to shrink OS file size (requires an exclusive table lock!).</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🚨 Long-Running Transactions & Bloat Crisis</strong>
+                    Why do senior DBA teams kill queries running longer than 30 minutes? Because a single open transaction holds back the database global horizon (oldest active TXID). Autovacuum cannot clean up ANY dead tuples created after that timestamp across the entire database!
+                </div>
+            `,
+            sql: `-- Simulating Bloat and Free Space reuse in SQLite:
+DROP TABLE IF EXISTS bloat_demo;
+CREATE TABLE bloat_demo (id INT PRIMARY KEY, payload TEXT);
+
+INSERT INTO bloat_demo VALUES (1, 'Row 1'), (2, 'Row 2'), (3, 'Row 3');
+
+-- Deleting rows leaves empty slots in physical disk pages:
+DELETE FROM bloat_demo WHERE id IN (1, 2);
+
+-- Check freelist before and after VACUUM:
+PRAGMA freelist_count;
+VACUUM;
+PRAGMA freelist_count;`
+        },
+        {
+            title: "Latching vs Locking & Deadlocks",
+            subtitle: "Logical transaction locks vs physical memory mutexes",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>When two bank transfers execute simultaneously (Tx A transfers Account 1 $\\rightarrow$ 2; Tx B transfers Account 2 $\\rightarrow$ 1), both transactions acquire exclusive locks on their first account and wait forever for the second account! This is a **Deadlock**.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Locks:</strong> Logical guards on Tables, Rows, or Keys held for the entire transaction duration (ACID). Types include Shared (Read) and Exclusive (Write).</li>
+                    <li><strong>Latches:</strong> Physical internal mutexes held for microseconds to protect B+ Tree pages in RAM during node splits! No deadlock detection exists for latches; engineers avoid deadlocks by strictly latching nodes top-to-bottom!</li>
+                    <li><strong>Deadlock Detection:</strong> Storage engines build a <strong>Wait-For Graph</strong>. If a cycle is detected, the engine aborts the youngest transaction with a <code>Deadlock found when trying to get lock; try restarting transaction</code> error!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🛡️ Deadlock Prevention Pattern</strong>
+                    To eliminate deadlocks in high-concurrency financial ledgers, senior engineers enforce a strict global ordering rule: always lock resources in deterministic alphabetical or numerical order (e.g., always lock <code>min(acc1, acc2)</code> before <code>max(acc1, acc2)</code>)!
+                </div>
+            `,
+            sql: `-- Simulating lock states and atomic transaction execution:
+DROP TABLE IF EXISTS ledger_locks;
+CREATE TABLE ledger_locks (account_id INT PRIMARY KEY, balance DECIMAL(10,2));
+INSERT INTO ledger_locks VALUES (1, 500.00), (2, 500.00);
+
+-- Executing atomic transfer within explicit transaction boundaries:
+BEGIN TRANSACTION;
+UPDATE ledger_locks SET balance = balance - 100.00 WHERE account_id = 1;
+UPDATE ledger_locks SET balance = balance + 100.00 WHERE account_id = 2;
+COMMIT;
+
+SELECT * FROM ledger_locks;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 6: DURABILITY & CRASH RECOVERY (WAL)
+// ────────────────────────────────────────────────────────
+{
+    title: "6. Durability & WAL",
+    slides: [
+        {
+            title: "Write-Ahead Logging (WAL) Architecture",
+            subtitle: "Turning random disk page writes into lightning-fast sequential log appends",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Updating 5 scattered rows across a 100GB table modifies 5 different 8KB physical disk pages. Writing those 5 random blocks to disk requires 5 slow random disk seeks (~50 milliseconds total!). If 1,000 users check out simultaneously, random I/O freezes the server!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>The <strong>Write-Ahead Log (WAL)</strong> solves durability by converting random I/O into sequential I/O:</p>
+                <ul>
+                    <li><strong>The WAL Protocol:</strong> Before any modified dirty page in the Buffer Pool is written to physical disk, the change record MUST be sequentially appended and flushed (<code>fsync</code>) to the WAL log file!</li>
+                    <li><strong>Why Sequential I/O is 100x Faster:</strong> Appending bytes to the end of a log file requires zero disk head movement on HDDs and maximum block throughput on SSDs (&lt; 0.1ms per write)!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>⚡ Tuning fsync & synchronous_commit</strong>
+                    In PostgreSQL, setting <code>synchronous_commit = off</code> decouples transaction COMMIT from waiting for WAL disk <code>fsync</code>. This increases write throughput from 2,000 TPS to 50,000 TPS! Tradeoff: In the event of an OS kernel crash, you might lose the last 200 milliseconds of transactions (though database corruption never occurs!).
+                </div>
+            `,
+            sql: `-- Step 1: Check and toggle SQLite Journal Mode to WAL!
+PRAGMA journal_mode;
+
+-- Switch engine to Write-Ahead Log (WAL) mode:
+PRAGMA journal_mode = WAL;
+
+-- Step 2: Perform transactional writes under WAL:
+DROP TABLE IF EXISTS wal_demo;
+CREATE TABLE wal_demo (id INT PRIMARY KEY, action TEXT);
+INSERT INTO wal_demo VALUES (1, 'WAL Log Append Record 1');
+INSERT INTO wal_demo VALUES (2, 'WAL Log Append Record 2');
+
+SELECT * FROM wal_demo;`
+        },
+        {
+            title: "Checkpointing & Fuzzy Checkpoints",
+            subtitle: "Flushing dirty buffer pool pages without freezing live transactions",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>If the WAL log grows infinitely for 6 months without flushing dirty buffer pool pages to physical data files, crash recovery after a power outage would take 12 hours of replaying log records from the beginning of time!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Checkpoint:</strong> The process of writing all dirty pages from Buffer Pool RAM to physical disk data files and trimming old WAL log files.</li>
+                    <li><strong>Fuzzy Checkpointing:</strong> Traditional checkpoints freeze all incoming transactions while flushing memory. Modern RDBMS use fuzzy checkpointing: background threads continuously flush dirty pages in small batches over 15 minutes, recording a Checkpoint LSN (Log Sequence Number) without blocking live writes!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🔥 WAL Disk Saturation & max_wal_size</strong>
+                    If a bulk data migration inserts 100 million rows in 10 minutes, WAL generation exceeds checkpoint flushing speed. When <code>max_wal_size</code> is breached, PostgreSQL triggers an aggressive emergency checkpoint, causing severe I/O latency spikes! Always size WAL buffers generously before bulk loads!
+                </div>
+            `,
+            sql: `-- Inspecting and triggering Checkpoints in SQLite WAL mode:
+PRAGMA wal_checkpoint(PASSIVE);
+
+DROP TABLE IF EXISTS checkpoint_demo;
+CREATE TABLE checkpoint_demo (id INT PRIMARY KEY, log_entry TEXT);
+INSERT INTO checkpoint_demo VALUES (1, 'Pre-checkpoint dirty frame');
+
+-- Force a TRUNCATE checkpoint to flush dirty RAM pages to disk and clean WAL:
+PRAGMA wal_checkpoint(TRUNCATE);`
+        },
+        {
+            title: "ARIES Crash Recovery Algorithm",
+            subtitle: "How the engine resurrects consistency after a catastrophic power loss",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>At 3:00:00 AM, a power failure crashes the database server. When the server reboots at 3:01 AM, RAM buffer pools are completely erased! Some uncommitted transactions had written dirty pages to disk, while some committed transactions only existed in the WAL log! How does the database restore ACID consistency?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>All modern enterprise storage engines implement the <strong>ARIES (Algorithms for Recovery and Isolation Exploiting Semantics)</strong> recovery protocol in 3 distinct phases upon startup:</p>
+                <div class="diagram-box">[ 1. ANALYSIS PHASE ] --&gt; Scans WAL forward from last Checkpoint LSN to identify all Active Transactions &amp; Dirty Pages at crash time.
+         ||
+[ 2. REDO PHASE     ] --&gt; Replays ALL WAL log records forward (Repeating History!), restoring disk pages to exact state at crash time!
+         ||
+[ 3. UNDO PHASE     ] --&gt; Scans WAL backward, executing compensation log records to rollback all uncommitted transactions!</div>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>💡 Why "Repeating History" is Genius</strong>
+                    During the Redo phase, ARIES replays both committed AND uncommitted updates! By restoring the database to its exact physical state at the moment of the crash first, the Undo phase can cleanly execute logical rollbacks without complex conditional branching!
+                </div>
+            `,
+            sql: `-- Simulating Transaction Logging & Rollback in SQL:
+DROP TABLE IF EXISTS aries_demo;
+CREATE TABLE aries_demo (account_id INT PRIMARY KEY, balance DECIMAL(10,2));
+INSERT INTO aries_demo VALUES (1, 1000.00);
+
+-- Simulating an uncommitted transaction that must be aborted (Undo Phase):
+BEGIN TRANSACTION;
+UPDATE aries_demo SET balance = 500.00 WHERE account_id = 1;
+-- Power loss occurs here! We execute ROLLBACK to simulate ARIES Undo:
+ROLLBACK;
+
+-- Notice balance is cleanly restored to 1000.00:
+SELECT * FROM aries_demo;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 7: WHY IS THE DATABASE SLOW?
+// ────────────────────────────────────────────────────────
+{
+    title: "7. Why is DB Slow? (Diagnosis)",
+    slides: [
+        {
+            title: "Disk I/O Bottlenecks & Buffer Pool Thrashing",
+            subtitle: "Diagnosing when your working set exceeds physical RAM memory",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p><strong>"Why is the database slow?"</strong> This is the ultimate Staff Engineer interview question. When query P99 latency spikes from 10ms to 5,000ms, junior engineers blindly add random indexes or reboot the server. Senior engineers execute a structured root-cause elimination framework!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>The #1 root cause of database slowdowns is <strong>Buffer Pool Thrashing (Disk I/O Saturation)</strong>:</p>
+                <ul>
+                    <li><strong>The Symptom:</strong> High disk read IOPS, high CPU iowait, and Buffer Pool Hit Ratio dropping below 95%.</li>
+                    <li><strong>The Root Cause:</strong> Your active hot data working set (e.g., 50GB of daily active users) exceeds physical Buffer Pool RAM (e.g., 16GB RAM). Every query experiences a cache miss, forcing 100,000ns random disk reads!</li>
+                    <li><strong>The Fix:</strong> Increase RAM provisioning, partition historical tables out of the working set, or rewrite queries that perform accidental full table scans!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🔍 The Senior Diagnosis Checklist</strong>
+                    When diagnosing slow databases, always check in this exact order:
+                    1. <strong>RAM/Cache:</strong> Is Buffer Pool Hit Ratio &gt; 99%?
+                    2. <strong>Disk I/O:</strong> Is disk IOPS or iowait saturated?
+                    3. <strong>Lock Contention:</strong> Are queries waiting on row locks or transaction IDs?
+                    4. <strong>Query Plan:</strong> Is the CBO doing accidental Full Table Scans due to stale statistics?
+                </div>
+            `,
+            sql: `-- Simulating Query Plan diagnosis for slow queries:
+DROP TABLE IF EXISTS diag_users;
+CREATE TABLE diag_users (id INT PRIMARY KEY, email TEXT, status TEXT);
+INSERT INTO diag_users VALUES (1, 'a@corp.com', 'active'), (2, 'b@corp.com', 'pending');
+
+-- Step 1: Diagnose query execution strategy using EXPLAIN QUERY PLAN:
+-- If you see "SCAN TABLE" without an index name -> FULL TABLE SCAN BOTTLENECK!
+EXPLAIN QUERY PLAN SELECT * FROM diag_users WHERE email = 'a@corp.com';`
+        },
+        {
+            title: "Index Bloat & Page Splits Fragmentation",
+            subtitle: "When B+ Tree leaf nodes become 50% empty Swiss cheese",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Why does a table with 10 million rows suddenly take 5x longer to scan than it did 3 months ago, even though no new rows were added?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p><strong>Index Fragmentation &amp; Bloat:</strong></p>
+                <ul>
+                    <li>When random keys (UUIDv4) are inserted or rows are deleted across time, B+ Tree leaf nodes split and leave 40% to 50% empty space inside each 8KB page!</li>
+                    <li>An index that should fit in 1,000 pages now spans 2,500 pages! Scanning the index requires reading 2.5x more physical disk blocks into the Buffer Pool, polluting cache memory!</li>
+                    <li><strong>The Fix:</strong> Execute index rebuilding (PostgreSQL <code>REINDEX CONCURRENTLY</code> or MySQL <code>OPTIMIZE TABLE</code>) during off-peak maintenance windows!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>💡 Fill Factor Tuning</strong>
+                    In PostgreSQL, creating tables with <code>WITH (fillfactor = 80)</code> intentionally leaves 20% free space inside each page during initial inserts! When an MVCC update occurs, the new tuple version fits inside the exact same physical page (HOT - Heap-Only Tuple update), avoiding index updates and bloat!
+                </div>
+            `,
+            sql: `-- Inspecting table schema and rebuilding indexes:
+DROP TABLE IF EXISTS index_bloat_demo;
+CREATE TABLE index_bloat_demo (id INT PRIMARY KEY, code TEXT);
+CREATE INDEX idx_code ON index_bloat_demo(code);
+
+INSERT INTO index_bloat_demo VALUES (1, 'ALPHA'), (2, 'BETA'), (3, 'GAMMA');
+
+-- Reindex command rebuilds B-Tree cleanly:
+REINDEX idx_code;
+SELECT * FROM index_bloat_demo;`
+        },
+        {
+            title: "Lock Contention & TXID Wraparound",
+            subtitle: "How long-running queries paralyze background maintenance",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Why does the database freeze completely during Black Friday checkout sales, showing thousands of connections in <code>waiting for lock</code> state?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Row Lock Contention:</strong> When 500 concurrent threads attempt to update the exact same inventory row (<code>UPDATE products SET stock = stock - 1 WHERE id = 99</code>), 499 threads queue up waiting for exclusive row locks! Throughput collapses to 1 transaction per RTT!</li>
+                    <li><strong>TXID Wraparound Crisis (PostgreSQL):</strong> Transaction IDs are 32-bit integers (~4 billion max). If autovacuum is blocked by long-running queries and cannot freeze old transaction IDs, the database executes an emergency mandatory shutdown to prevent permanent data loss!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>⚡ Resolving Inventory Lock Contention</strong>
+                    To eliminate row lock bottlenecks on hot inventory items, senior architects use <strong>Batching / Sharding Counters</strong> (splitting inventory into 10 buckets: <code>stock_shard_1</code> through <code>stock_shard_10</code>) or process reservations asynchronously via Redis / Kafka queues!
+                </div>
+            `,
+            sql: `-- Demonstrating clean transactional lock boundaries:
+DROP TABLE IF EXISTS inventory_locks;
+CREATE TABLE inventory_locks (sku TEXT PRIMARY KEY, stock INT);
+INSERT INTO inventory_locks VALUES ('PS5-CONSOLE', 100);
+
+-- Executing fast, atomic inventory decrement without holding open locks:
+UPDATE inventory_locks SET stock = stock - 1 WHERE sku = 'PS5-CONSOLE' AND stock > 0;
+
+SELECT * FROM inventory_locks;`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 8: BEYOND RELATIONAL: LSM & COLUMNAR
+// ────────────────────────────────────────────────────────
+{
+    title: "8. Beyond Relational: LSM & Columnar",
+    slides: [
+        {
+            title: "LSM-Trees vs B+ Trees (RocksDB & Cassandra)",
+            subtitle: "Why Log-Structured Merge Trees conquer write-heavy workloads",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>When logging 100,000 IoT sensor metrics per second, B+ Tree page splits and random disk seeks cause massive write amplification (writing 8KB to disk just to insert a 50-byte row!). How do databases like Cassandra, RocksDB, and DynamoDB achieve 10x higher write throughput?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p><strong>LSM-Trees (Log-Structured Merge-Trees)</strong> eliminate random disk overwrites entirely by turning ALL writes into sequential appends:</p>
+                <div class="diagram-box">[ Write Request ] ===&gt; 1. Append to WAL Log (Durability)
+                  ===&gt; 2. Insert into MemTable (In-Memory Sorted Tree in RAM)
+                           || (When MemTable fills ~64MB)
+                       3. Flush sequentially to Disk as immutable SSTable!
+                           || (Background Thread)
+                       4. Compaction merges &amp; deduplicates SSTables across Levels!</div>
+                <ul>
+                    <li><strong>Pros:</strong> 10x faster write throughput than B+ Trees! 50% better disk compression!</li>
+                    <li><strong>Cons:</strong> Read amplification (reading a key might check MemTable + 5 disk SSTables!). Solved using Bloom Filters!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>⚖️ Storage Engine Selection Matrix</strong>
+                    Use <strong>B+ Trees (PostgreSQL/MySQL)</strong> for read-heavy OLTP with frequent updates and point lookups. Use <strong>LSM-Trees (Cassandra/RocksDB/ScyllaDB)</strong> for write-heavy append-only time-series logs and event messaging!
+                </div>
+            `,
+            sql: `-- Simulating append-only time series event logging:
+DROP TABLE IF EXISTS lsm_event_stream;
+CREATE TABLE lsm_event_stream (
+    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sensor_id INT NOT NULL,
+    metric_val DECIMAL(10,2) NOT NULL,
+    logged_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO lsm_event_stream (sensor_id, metric_val) VALUES 
+(801, 24.50), (802, 61.20), (801, 24.80), (803, 99.10);
+
+SELECT * FROM lsm_event_stream ORDER BY event_id DESC;`
+        },
+        {
+            title: "Columnar Storage vs Row Storage (OLAP)",
+            subtitle: "Parquet, ClickHouse & Snowflake: Why columnar format runs 100x faster for BI",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>If you run <code>SELECT AVG(salary) FROM employees</code> across 500 million rows, a row-oriented database (PostgreSQL) reads all 50 columns (name, address, bio, phone) from disk into RAM just to access the 1 salary integer! This wastes 95% of disk I/O bandwidth!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Row-Oriented Storage (OLTP - PostgreSQL/MySQL):</strong> Stores all attributes of a tuple contiguously on disk. Perfect for fetching a single user's profile!</li>
+                    <li><strong>Column-Oriented Storage (OLAP - Parquet/ClickHouse/Snowflake):</strong> Stores values of a single column contiguously across disk blocks!</li>
+                </ul>
+                <div class="diagram-box">Row Storage:    [Alice, 90k, NY] [Bob, 85k, CA] [Charlie, 120k, TX] (Reads everything!)
+Column Storage: [Alice, Bob, Charlie] | [90k, 85k, 120k] | [NY, CA, TX]
+                                         ^^^^^^^^^^^^^^ (Reads ONLY salary block! ⚡)</div>
+                <ul>
+                    <li><strong>Why Columnar is 100x Faster:</strong> Reading only the requested column cuts disk I/O by 90%! Furthermore, storing identical data types sequentially (e.g., 500,000 integers) enables super-dense compression (Run-Length Encoding / Dictionary Encoding)!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🏢 HTAP Architecture (Hybrid Transactional/Analytical)</strong>
+                    Modern enterprise architectures decouple OLTP from OLAP: operational microservices write to row-based PostgreSQL, while Change Data Capture (CDC / Debezium) streams mutations into columnar ClickHouse or Snowflake for real-time BI reporting!
+                </div>
+            `,
+            sql: `-- Simulating analytical columnar aggregation efficiency:
+DROP TABLE IF EXISTS analytics_salary;
+CREATE TABLE analytics_salary (id INT PRIMARY KEY, dept TEXT, salary INT);
+INSERT INTO analytics_salary VALUES (1, 'ENG', 150000), (2, 'ENG', 160000), (3, 'SALES', 120000);
+
+-- Analytical aggregation scanning only salary and dept dimensions:
+SELECT dept, COUNT(*) AS headcount, AVG(salary) AS avg_salary, MAX(salary) AS max_salary
+FROM analytics_salary GROUP BY dept;`
+        },
+        {
+            title: "Bloom Filters in Storage Engines",
+            subtitle: "Probabilistic data structures that answer 'definitely not in file' in 10ns",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>In LSM-Trees (Cassandra/RocksDB), searching for a key might require checking 10 different disk SSTables. Doing 10 disk seeks for a key that *doesn't even exist* destroys read throughput!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>A <strong>Bloom Filter</strong> is a space-efficient probabilistic bit array stored in RAM in front of every disk file:</p>
+                <ul>
+                    <li>When searching for key <code>user_99</code>, the engine hashes the key through $K$ hash functions and checks the bit array in RAM (~10 nanoseconds!).</li>
+                    <li><strong>Two Possible Answers:</strong>
+                        1. <strong>"Definitely NOT present!"</strong> $\\rightarrow$ The engine instantly skips the disk file! (Zero disk I/O wasted! ⚡)
+                        2. <strong>"Possibly present!"</strong> $\\rightarrow$ The engine reads the physical disk file (with a tiny 1% false positive rate).
+                    </li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🚀 Bloom Filters in PostgreSQL (Bitmap Index Scans)</strong>
+                    When PostgreSQL combines multiple indexes in a query (<code>WHERE status = 'active' AND tier = 'pro'</code>), it builds in-memory Bitmap/Bloom structures on the fly to intersect row IDs before ever touching physical table heap blocks!
+                </div>
+            `,
+            sql: `-- Simulating indexed filtering and selectivity in SQLite:
+DROP TABLE IF EXISTS bloom_sim;
+CREATE TABLE bloom_sim (id INT PRIMARY KEY, lookup_key TEXT UNIQUE);
+
+INSERT INTO bloom_sim VALUES (101, 'KEY_ALPHA'), (102, 'KEY_BETA');
+
+-- Fast unique index lookup (simulating instant filter resolution):
+EXPLAIN QUERY PLAN SELECT * FROM bloom_sim WHERE lookup_key = 'KEY_ZETA_NON_EXISTENT';`
+        }
+    ]
+}
+];
+
+// Initialize UI
+function init() {
+    renderSidebar();
+    loadSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` })
+        .then(SQL => {
+            db = new SQL.Database();
+            db.run("PRAGMA foreign_keys = ON;");
+            db.run("PRAGMA journal_mode = WAL;");
+            selectSlide(0, 0);
+        }).catch(err => {
+            document.getElementById('slideTitle').textContent = "Failed to load SQLite WASM";
+            console.error(err);
+        });
+}
+
+function renderSidebar() {
+    const list = document.getElementById('chapterList');
+    list.innerHTML = chapters.map((ch, cIdx) => `
+        <div class="chapter-group">
+            <div class="chapter-title">${ch.title}</div>
+            ${ch.slides.map((sl, sIdx) => `
+                <div class="slide-item ${cIdx === 0 && sIdx === 0 ? 'active' : ''}" 
+                     id="slide_${cIdx}_${sIdx}" 
+                     onclick="selectSlide(${cIdx}, ${sIdx})">
+                    <span class="slide-num">${sIdx + 1}.</span>
+                    <span>${sl.title}</span>
+                </div>
+            `).join('')}
+        </div>
+    `).join('');
+}
+
+function selectSlide(cIdx, sIdx) {
+    currentChapterIdx = cIdx;
+    currentSlideIdx = sIdx;
+    
+    document.querySelectorAll('.slide-item').forEach(el => el.classList.remove('active'));
+    const activeEl = document.getElementById(`slide_${cIdx}_${sIdx}`);
+    if (activeEl) activeEl.classList.add('active');
+
+    const slide = chapters[cIdx].slides[sIdx];
+    document.getElementById('slideTitle').textContent = slide.title;
+    document.getElementById('slideSubtitle').textContent = slide.subtitle;
+    document.getElementById('theoryPane').innerHTML = slide.theory;
+    document.getElementById('sqlEditor').value = slide.sql.trim();
+
+    resetCurrentSlide();
+}
+
+function resetCurrentSlide() {
+    if (!db) return;
+    const SQL = db.constructor;
+    db.close();
+    db = new SQL();
+    db.run("PRAGMA foreign_keys = ON;");
+    db.run("PRAGMA journal_mode = WAL;");
+    
+    document.getElementById('sqlEditor').value = chapters[currentChapterIdx].slides[currentSlideIdx].sql.trim();
+    runSQL();
+}
+
+function runSQL() {
+    if (!db) return;
+    const sqlText = document.getElementById('sqlEditor').value;
+    const resArea = document.getElementById('resultsArea');
+    const startTime = performance.now();
+
+    try {
+        const results = db.exec(sqlText);
+        const elapsed = (performance.now() - startTime).toFixed(1);
+
+        if (results.length === 0) {
+            resArea.innerHTML = `<div class="status-msg status-success">✅ Engine statements executed successfully (${elapsed}ms). Clean internal state.</div>`;
+            return;
+        }
+
+        let html = `<div class="status-msg status-success">✅ Engine query execution completed in ${elapsed}ms</div>`;
+        results.forEach(res => {
+            html += `<table><thead><tr>${res.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+            res.values.forEach(row => {
+                html += `<tr>${row.map(v => `<td>${v === null ? '<i style="color:var(--text2)">NULL</i>' : v}</td>`).join('')}</tr>`;
+            });
+            html += `</tbody></table><br>`;
+        });
+        resArea.innerHTML = html;
+    } catch (err) {
+        resArea.innerHTML = `<div class="status-msg status-error">❌ Storage Engine Execution Error: ${err.message}</div>`;
+    }
+}
+
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runSQL();
+    }
+});
+
+window.onload = init;
+</script>
+</body>
+</html>
