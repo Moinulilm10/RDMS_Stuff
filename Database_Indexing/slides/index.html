@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 4 Interactive Index Studio</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #070a12;
+            --bg-sidebar: #111726;
+            --bg-card: #1a2236;
+            --bg-code: #0b0f19;
+            --accent: #22c55e;
+            --accent-glow: rgba(34, 197, 94, 0.35);
+            --cyan: #38bdf8;
+            --green: #34d399;
+            --yellow: #fcd34d;
+            --pink: #ec4899;
+            --purple: #a855f7;
+            --red: #f87171;
+            --text: #f8fafc;
+            --text2: #94a3b8;
+            --border: #28324a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 340px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #4ade80, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-home {
+            color: var(--text2);
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .nav-home:hover { color: #fff; background: var(--accent); }
+
+        .chapter-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+        }
+
+        .chapter-group { margin-bottom: 1.2rem; }
+        .chapter-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--green);
+            padding: 0.4rem 0.6rem;
+            font-weight: 800;
+        }
+
+        .slide-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text2);
+            font-size: 0.85rem;
+            transition: all 0.15s;
+            margin-bottom: 3px;
+        }
+
+        .slide-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+        .slide-item.active { background: rgba(34, 197, 94, 0.2); color: #fff; border-left: 3px solid var(--accent); font-weight: 700; }
+        .slide-num { font-size: 0.75rem; opacity: 0.6; width: 24px; }
+
+        /* Main Workspace */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: 60px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.75rem;
+            background: var(--bg-sidebar);
+        }
+
+        .slide-header-text h2 { font-size: 1.2rem; font-weight: 800; color: #fff; }
+        .slide-header-text span { font-size: 0.82rem; color: var(--text2); }
+
+        .engine-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .content-area {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            overflow: hidden;
+        }
+
+        /* Theory & Visual Pane */
+        .theory-pane {
+            padding: 2.25rem;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+            line-height: 1.7;
+        }
+
+        .section-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+        .badge-prob { background: rgba(248, 113, 113, 0.15); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.3); }
+        .badge-sol { background: rgba(52, 211, 153, 0.15); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.3); }
+        .badge-real { background: rgba(56, 189, 248, 0.15); color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .badge-senior { background: rgba(168, 85, 247, 0.15); color: var(--purple); border: 1px solid rgba(168, 85, 247, 0.3); }
+
+        .theory-pane h3 { font-size: 1.3rem; margin: 1.5rem 0 0.75rem; color: #fff; font-weight: 800; }
+        .theory-pane h3:first-child { margin-top: 0; }
+        .theory-pane p { margin-bottom: 1.1rem; color: #cbd5e1; font-size: 0.95rem; }
+        .theory-pane ul, .theory-pane ol { margin: 0 0 1.2rem 1.5rem; color: #cbd5e1; font-size: 0.95rem; }
+        .theory-pane li { margin-bottom: 0.45rem; }
+
+        .diagram-box {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin: 1.25rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: var(--cyan);
+            white-space: pre;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        .problem-box {
+            background: rgba(248, 113, 113, 0.08);
+            border-left: 4px solid var(--red);
+            padding: 1.1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+        }
+        .problem-box strong { color: var(--red); display: block; margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+        .solution-box {
+            background: rgba(52, 211, 153, 0.08);
+            border-left: 4px solid var(--green);
+            padding: 1.1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+        }
+        .solution-box strong { color: var(--green); display: block; margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+        .scenario-box {
+            background: rgba(168, 85, 247, 0.08);
+            border-left: 4px solid var(--purple);
+            padding: 1.1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+        }
+        .scenario-box strong { color: var(--purple); display: block; margin-bottom: 0.3rem; font-size: 0.92rem; }
+
+        /* Interactive Sandbox Pane */
+        .sandbox-pane {
+            display: flex;
+            flex-direction: column;
+            background: #070a12;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            padding: 0.7rem 1.2rem;
+            background: #111726;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text2);
+            font-weight: 700;
+        }
+
+        .sql-editor {
+            flex: 1;
+            background: var(--bg-code);
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.87rem;
+            padding: 1.25rem;
+            border: none;
+            resize: none;
+            outline: none;
+            line-height: 1.6;
+        }
+
+        .editor-actions {
+            padding: 0.75rem 1.2rem;
+            background: #111726;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-run {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0.55rem 1.4rem;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px var(--accent-glow);
+        }
+        .btn-run:hover { background: #4ade80; transform: translateY(-1px); }
+
+        .btn-reset {
+            background: transparent;
+            color: var(--text2);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-reset:hover { color: #fff; border-color: var(--text2); }
+
+        .results-area {
+            height: 45%;
+            background: #070a12;
+            overflow: auto;
+            padding: 1.2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 1rem;
+        }
+
+        th, td {
+            padding: 0.65rem 0.85rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #111726;
+            color: var(--green);
+            position: sticky;
+            top: 0;
+            font-weight: 700;
+        }
+
+        td { color: #cbd5e1; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .status-msg {
+            font-size: 0.86rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-success { background: rgba(52, 211, 153, 0.12); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.25); }
+        .status-error { background: rgba(248, 113, 113, 0.12); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.25); }
+
+        @media (max-width: 1100px) {
+            .content-area { grid-template-columns: 1fr; }
+            .sidebar { width: 280px; }
+        }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h1>🔍 Index Studio</h1>
+        <a href="../index.html" class="nav-home">Hub</a>
+    </div>
+    <div class="chapter-list" id="chapterList"></div>
+</aside>
+
+<main class="main">
+    <header class="topbar">
+        <div class="slide-header-text">
+            <h2 id="slideTitle">Loading Internals...</h2>
+            <span id="slideSubtitle">Senior/Staff Engineering Deep Dive</span>
+        </div>
+        <div class="engine-badge">
+            ⚡ SQLite WASM Execution Engine Active
+        </div>
+    </header>
+
+    <div class="content-area">
+        <div class="theory-pane" id="theoryPane"></div>
+        <div class="sandbox-pane">
+            <div class="editor-header">
+                <span>💻 QUERY OPTIMIZER & EXECUTION PLAN SANDBOX</span>
+                <span>Ctrl + Enter to Execute</span>
+            </div>
+            <textarea class="sql-editor" id="sqlEditor" spellcheck="false"></textarea>
+            <div class="editor-actions">
+                <button class="btn-reset" onclick="resetCurrentSlide()">🔄 Reset Clean Engine State</button>
+                <button class="btn-run" onclick="runSQL()">▶ Execute Engine Script</button>
+            </div>
+            <div class="results-area" id="resultsArea">
+                <div class="status-msg status-success">Ready to inspect query execution plans...</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+let db = null;
+let currentChapterIdx = 0;
+let currentSlideIdx = 0;
+
+const chapters = [
+// ────────────────────────────────────────────────────────
+// CHAPTER 1: THE BASICS OF INDEXING
+// ────────────────────────────────────────────────────────
+{
+    title: "1. Core Index Concepts",
+    slides: [
+        {
+            title: "What is an Index? Why Index?",
+            subtitle: "Understanding the fundamental tradeoff of database read acceleration",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Imagine searching for the word "Zebra" in a 5,000-page dictionary that has no alphabetical ordering. You would have to read every single page from cover to cover (a <strong>Sequential Scan</strong> / <strong>Full Table Scan</strong>)! If the table has 100 million rows, finding a single user record requires reading 100 million physical rows from disk!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>An <strong>Index</strong> is a separate, dedicated data structure (like the index at the back of a textbook) that stores a copy of the indexed column's values, sorted mathematically, alongside a pointer to the actual physical row data.</p>
+                <ul>
+                    <li><strong>How it works:</strong> The database engine traverses the sorted index structure (usually a B+ Tree) using binary search. Finding a record among 100 million rows takes ~3 memory hops instead of 100 million!</li>
+                    <li><strong>The Write Tax:</strong> Indexes are not free! Every time you <code>INSERT</code>, <code>UPDATE</code>, or <code>DELETE</code> a row in the table, the database must ALSO update every single index on that table!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>⚠️ Over-Indexing</strong>
+                    Junior engineers add an index to every column. When a table has 15 indexes, a single <code>INSERT</code> translates into 1 disk write for the row data, PLUS 15 disk writes to update all the index B+ Trees! This destroys write throughput. Senior engineers only index columns explicitly used in <code>WHERE</code>, <code>JOIN</code>, or <code>ORDER BY</code> clauses.
+                </div>
+            `,
+            sql: `-- Step 1: Create a table without an index
+DROP TABLE IF EXISTS users_no_idx;
+CREATE TABLE users_no_idx (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, name TEXT);
+INSERT INTO users_no_idx (email, name) VALUES ('alice@corp.com', 'Alice'), ('bob@corp.com', 'Bob');
+
+-- EXPLAIN QUERY PLAN reveals a Full Table Scan (SCAN TABLE):
+EXPLAIN QUERY PLAN SELECT * FROM users_no_idx WHERE email = 'bob@corp.com';
+
+-- Step 2: Create an index and check the execution plan again!
+CREATE INDEX idx_users_email ON users_no_idx(email);
+
+-- EXPLAIN QUERY PLAN now reveals an Index Scan (SEARCH TABLE USING INDEX):
+EXPLAIN QUERY PLAN SELECT * FROM users_no_idx WHERE email = 'bob@corp.com';`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 2: INDEX STRUCTURES
+// ────────────────────────────────────────────────────────
+{
+    title: "2. Index Structures",
+    slides: [
+        {
+            title: "B-Tree vs B+ Tree",
+            subtitle: "The undisputed king of relational indexing",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Standard Binary Trees are too deep (20+ levels) for disk storage, causing massive random I/O delays. Standard B-Trees store data in every node, reducing the fan-out (branching factor).</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>Most relational databases (PostgreSQL, MySQL InnoDB) use <strong>B+ Trees</strong> (Balanced + Trees):</p>
+                <ul>
+                    <li><strong>Internal Nodes:</strong> Store only keys and pointers, allowing massive fan-out (500+ children per node).</li>
+                    <li><strong>Leaf Nodes:</strong> Store the actual data (Clustered) or pointers to data (Secondary). All leaf nodes are linked via a <strong>doubly linked list</strong>!</li>
+                    <li><strong>Range Queries:</strong> Because of the linked list, queries like <code>WHERE age BETWEEN 20 AND 30</code> find the start node (20) and just scan right sequentially across the leaf nodes!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>💡 Hash vs B+ Tree</strong>
+                    A <strong>Hash Index</strong> provides $O(1)$ lookups, faster than a B+ Tree's $O(log N)$. However, Hash Indexes CANNOT perform range queries (<code>&lt;</code>, <code>&gt;</code>, <code>BETWEEN</code>) or sorting (<code>ORDER BY</code>) because hashing destroys ordering! This is why B+ Trees remain the default.
+                </div>
+            `,
+            sql: `-- SQLite defaults to B-Trees for indexes. Let's see how range queries utilize them.
+DROP TABLE IF EXISTS employees;
+CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, salary INTEGER);
+CREATE INDEX idx_salary ON employees(salary);
+
+INSERT INTO employees VALUES (1, 'Alice', 90000), (2, 'Bob', 80000), (3, 'Charlie', 120000);
+
+-- Searching for an exact value (Equality lookup -> O(log N))
+EXPLAIN QUERY PLAN SELECT * FROM employees WHERE salary = 90000;
+
+-- Searching for a range (Range Scan -> utilizes B+ Tree Leaf Linked List)
+EXPLAIN QUERY PLAN SELECT * FROM employees WHERE salary BETWEEN 80000 AND 100000;
+
+-- Sorting via the index (Avoids costly in-memory sort!)
+EXPLAIN QUERY PLAN SELECT * FROM employees ORDER BY salary DESC;`
+        },
+        {
+            title: "Advanced: GIN, GiST, and BRIN",
+            subtitle: "PostgreSQL specialized index structures for modern workloads",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>A B-Tree fails when indexing multi-value data types like Arrays, JSONB documents, or Full-Text search vectors. How do you index a JSON document where the keys are dynamic?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>PostgreSQL offers specialized index structures:</p>
+                <ul>
+                    <li><strong>GIN (Generalized Inverted Index):</strong> Perfect for <code>JSONB</code>, arrays, and full-text search. It creates an inverted mapping (like a book index) from every single word/element to the rows that contain them!</li>
+                    <li><strong>GiST (Generalized Search Tree):</strong> Used for Geospatial data (PostGIS), IP ranges, and bounding boxes. It supports "lossy" searches (finding candidates via bounding box intersections).</li>
+                    <li><strong>BRIN (Block Range Index):</strong> Used for massive, naturally sorted time-series tables (e.g., IoT logs). Instead of indexing every row, it stores the MIN and MAX timestamp for every 1MB physical disk block! Tiny memory footprint, massive disk skip capability!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>⚠️ The GIN Write Penalty</strong>
+                    GIN indexes are incredibly powerful for JSONB, but they have a severe write penalty. Inserting a JSON document with 50 keys requires updating the GIN index 50 times! Senior engineers use the <code>fastupdate</code> parameter in PostgreSQL to buffer GIN inserts in RAM to maintain write throughput.
+                </div>
+            `,
+            sql: `-- Note: SQLite does not have native GIN/GiST like PostgreSQL, 
+-- but it has FTS5 (Full Text Search) which acts like an inverted index (GIN).
+
+-- Step 1: Create a Full-Text Search virtual table
+DROP TABLE IF EXISTS articles;
+CREATE VIRTUAL TABLE articles USING fts5(title, body);
+
+INSERT INTO articles VALUES 
+('Indexing 101', 'B-Trees are the foundation of relational databases.'),
+('Advanced PostgreSQL', 'GIN and GiST indexes power JSONB and PostGIS queries.'),
+('Data Engineering', 'Understanding execution plans prevents full table scans.');
+
+-- Step 2: Use the MATCH operator to search the inverted index instantly!
+SELECT * FROM articles WHERE articles MATCH 'GIN OR GiST';`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 3: TYPES OF INDEXES
+// ────────────────────────────────────────────────────────
+{
+    title: "3. Types of Indexes",
+    slides: [
+        {
+            title: "Composite Index & Leftmost Prefix Rule",
+            subtitle: "Why the order of columns in an index dictates its power",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Queries often filter on multiple columns: <code>WHERE last_name = 'Smith' AND first_name = 'John'</code>. Creating two separate indexes is inefficient. A <strong>Composite Index</strong> spans multiple columns.</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>A composite index <code>CREATE INDEX idx_name ON users(last_name, first_name)</code> sorts data hierarchically: first by <code>last_name</code>, then by <code>first_name</code> within each last name (just like a phone book!).</p>
+                <ul>
+                    <li><strong>The Leftmost Prefix Rule:</strong> The database can only use the index if your query filters on the leftmost columns consecutively!</li>
+                    <li>Querying <code>WHERE last_name = 'Smith'</code> ➔ Uses Index.</li>
+                    <li>Querying <code>WHERE last_name = 'Smith' AND first_name = 'John'</code> ➔ Uses Index.</li>
+                    <li>Querying <code>WHERE first_name = 'John'</code> ➔ <strong>FULL TABLE SCAN!</strong> (Because without the last name, first names are scattered randomly throughout the index).</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🎯 Equality First, Range Last</strong>
+                    When designing a composite index, always put columns with Equality filters (<code>=</code>) FIRST, and Range filters (<code>&gt;, &lt;, BETWEEN</code>) LAST. As soon as the engine encounters a range filter, it cannot use subsequent columns in the index for seeking!
+                </div>
+            `,
+            sql: `-- Step 1: Create a composite index
+DROP TABLE IF EXISTS customers;
+CREATE TABLE customers (id INTEGER PRIMARY KEY, last_name TEXT, first_name TEXT, city TEXT);
+CREATE INDEX idx_name ON customers(last_name, first_name);
+
+-- 1. Filters on Leftmost column -> USES INDEX (SEARCH TABLE)
+EXPLAIN QUERY PLAN SELECT * FROM customers WHERE last_name = 'Smith';
+
+-- 2. Filters on Both leftmost columns -> USES INDEX (SEARCH TABLE)
+EXPLAIN QUERY PLAN SELECT * FROM customers WHERE last_name = 'Smith' AND first_name = 'John';
+
+-- 3. Filters ONLY on second column -> FULL TABLE SCAN (SCAN TABLE)
+EXPLAIN QUERY PLAN SELECT * FROM customers WHERE first_name = 'John';`
+        },
+        {
+            title: "Covering Indexes (Index-Only Scans)",
+            subtitle: "Eliminating physical table lookups entirely",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>When you use a secondary index, the engine finds the Row ID in the index leaf, but then must perform a random disk seek to the physical table heap to fetch the rest of the columns. This "Heap Fetch" is expensive!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>A <strong>Covering Index</strong> includes all columns requested by the <code>SELECT</code>, <code>WHERE</code>, and <code>ORDER BY</code> clauses inside the index itself!</p>
+                <ul>
+                    <li>If the index contains everything the query needs, the database never visits the table heap! This triggers an <strong>Index-Only Scan</strong>, yielding massive performance gains.</li>
+                    <li>In PostgreSQL, use the <code>INCLUDE</code> clause: <code>CREATE INDEX idx_user ON users(email) INCLUDE (status, created_at);</code>. This adds the payload to the leaf nodes without sorting by it!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🚀 10x API Acceleration</strong>
+                    If an API endpoint constantly executes <code>SELECT id, status FROM orders WHERE user_id = ?</code>, adding a covering index on <code>(user_id, id, status)</code> turns a slow random I/O query into a blazing fast CPU memory read, eliminating 50% of the disk load!
+                </div>
+            `,
+            sql: `-- Step 1: Create a table and a composite/covering index
+DROP TABLE IF EXISTS orders;
+CREATE TABLE orders (id INTEGER PRIMARY KEY, user_id INTEGER, status TEXT, total REAL);
+
+-- This index acts as a Covering Index if we only select user_id and status!
+CREATE INDEX idx_user_status ON orders(user_id, status);
+
+INSERT INTO orders VALUES (1, 101, 'shipped', 50.0), (2, 101, 'pending', 20.0);
+
+-- Query requesting ONLY indexed columns -> Covering Index / Index-Only Scan!
+-- SQLite indicates this with "COVERING INDEX" in the plan!
+EXPLAIN QUERY PLAN SELECT user_id, status FROM orders WHERE user_id = 101;
+
+-- Query requesting an unindexed column (total) -> Requires Heap Fetch!
+EXPLAIN QUERY PLAN SELECT user_id, status, total FROM orders WHERE user_id = 101;`
+        },
+        {
+            title: "Partial & Expression Indexes",
+            subtitle: "Optimizing index size and function calls",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>Why index 10 million "completed" orders when your application only queries for the 500 "pending" orders? A full index wastes RAM and disk space!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <ul>
+                    <li><strong>Partial Index:</strong> An index built with a <code>WHERE</code> clause. <code>CREATE INDEX idx_pending ON orders(created_at) WHERE status = 'pending';</code>. This index is tiny, fits easily in RAM, and updates only when pending orders are inserted!</li>
+                    <li><strong>Expression / Function-Based Index:</strong> If you constantly query <code>WHERE LOWER(email) = 'alice@corp.com'</code>, a normal index on <code>email</code> is ignored! You must create an index on the function itself: <code>CREATE INDEX idx_lower_email ON users(LOWER(email));</code>.</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🛡️ Soft Deletes Optimization</strong>
+                    In modern SaaS, tables use "Soft Deletes" (<code>deleted_at IS NOT NULL</code>). Adding <code>WHERE deleted_at IS NULL</code> to all your indexes (making them Partial Indexes) shrinks your index sizes by 40% and keeps deleted garbage out of your hot Buffer Pool RAM!
+                </div>
+            `,
+            sql: `-- Step 1: Create a Partial Index on a specific subset of data
+DROP TABLE IF EXISTS tasks;
+CREATE TABLE tasks (id INTEGER PRIMARY KEY, task_name TEXT, status TEXT);
+
+-- Create a Partial Index ONLY for pending tasks
+CREATE INDEX idx_pending_tasks ON tasks(task_name) WHERE status = 'pending';
+
+INSERT INTO tasks VALUES (1, 'Fix bug', 'pending'), (2, 'Write docs', 'completed');
+
+-- Query matching the partial index condition -> USES PARTIAL INDEX!
+EXPLAIN QUERY PLAN SELECT * FROM tasks WHERE status = 'pending' AND task_name = 'Fix bug';
+
+-- Step 2: Create an Expression Index
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT);
+
+CREATE INDEX idx_lower_email ON users(LOWER(email));
+
+-- The planner utilizes the expression index!
+EXPLAIN QUERY PLAN SELECT * FROM users WHERE LOWER(email) = 'admin@corp.com';`
+        }
+    ]
+},
+
+// ────────────────────────────────────────────────────────
+// CHAPTER 4: EXECUTION PLANS & OPTIMIZER DECISIONS
+// ────────────────────────────────────────────────────────
+{
+    title: "4. Query Planner & Selectivity",
+    slides: [
+        {
+            title: "Selectivity & Cardinality",
+            subtitle: "When the optimizer decides to IGNORE your index",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>You created an index on the <code>gender</code> or <code>status</code> column, but <code>EXPLAIN ANALYZE</code> shows the database is doing a Full Table Scan! Why did the engine ignore your perfectly good index?</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>The Cost-Based Optimizer (CBO) uses statistics to calculate <strong>Selectivity</strong> (what percentage of rows will match the filter).</p>
+                <ul>
+                    <li><strong>High Selectivity (Rare Values):</strong> E.g., searching by <code>email</code> or a specific <code>UUID</code>. The index is highly efficient.</li>
+                    <li><strong>Low Selectivity (Common Values):</strong> E.g., searching by <code>gender = 'F'</code> (returns 50% of the table). If the engine uses the index, it must perform 50 million random disk seeks to the heap! The CBO calculates that doing a single sequential <strong>Full Table Scan</strong> is mathematically faster than 50 million random seeks!</li>
+                    <li><strong>Cardinality:</strong> The number of unique distinct values in a column. Low cardinality columns (booleans, enums) usually make terrible standalone B-Tree indexes!</li>
+                </ul>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>💡 The Tipping Point</strong>
+                    In PostgreSQL, the tipping point is generally around 10% to 20%. If your query returns more than 15% of the table rows, the CBO will actively ignore the index and perform a Sequential Scan. Never index a boolean flag (like <code>is_active</code>) unless you use a Partial Index for the rare state!
+                </div>
+            `,
+            sql: `-- Demonstrating how the planner chooses scans based on schema logic
+-- SQLite doesn't have live histograms without ANALYZE, but it understands 
+-- PRIMARY KEY uniqueness (High Cardinality) vs generic indexes.
+
+DROP TABLE IF EXISTS cardinality_demo;
+CREATE TABLE cardinality_demo (
+    id INTEGER PRIMARY KEY,  -- 100% Unique, Max Selectivity
+    status TEXT              -- Low Selectivity
+);
+CREATE INDEX idx_status ON cardinality_demo(status);
+
+-- 1. High Selectivity Query -> Uses Index (RowID lookup)
+EXPLAIN QUERY PLAN SELECT * FROM cardinality_demo WHERE id = 42;
+
+-- 2. Low Selectivity Query without covering index -> Might use index or table scan depending on CBO stats
+EXPLAIN QUERY PLAN SELECT * FROM cardinality_demo WHERE status = 'active';`
+        },
+        {
+            title: "Bitmap Index Scans",
+            subtitle: "Combining multiple indexes efficiently before touching the heap",
+            theory: `
+                <span class="section-badge badge-prob">What Problem It Solves</span>
+                <p>You have a query: <code>WHERE category = 'electronics' AND status = 'in_stock'</code>. You have separate indexes on <code>category</code> and <code>status</code>. The engine cannot use both B-Trees simultaneously in a standard Index Scan!</p>
+
+                <span class="section-badge badge-sol">Theoretical Deep Dive</span>
+                <p>PostgreSQL uses a brilliant optimization called a <strong>Bitmap Index Scan</strong>:</p>
+                <ol>
+                    <li>The engine scans the <code>category</code> index and builds an in-memory bitmap (a string of 1s and 0s representing Row IDs).</li>
+                    <li>The engine scans the <code>status</code> index and builds a second bitmap.</li>
+                    <li>It performs a bitwise <strong>AND</strong> operation between the two bitmaps in RAM!</li>
+                    <li>Finally, it executes a <strong>Bitmap Heap Scan</strong>, fetching ONLY the physical rows where the bit is 1. Crucially, it sorts the Row IDs first, converting random disk reads into sequential disk reads!</li>
+                </ol>
+
+                <span class="section-badge badge-senior">Senior Engineer Perspective</span>
+                <div class="scenario-box">
+                    <strong>🔍 Reading Execution Plans</strong>
+                    If you see <code>Bitmap Index Scan</code> in PostgreSQL, it means the database is aggregating index results in memory. If you see <code>Index Scan</code>, it means it's fetching rows sequentially right out of the index. If you see <code>Seq Scan</code>, it's reading the whole disk file.
+                </div>
+            `,
+            sql: `-- SQLite doesn't natively expose "Bitmap Scans" in EXPLAIN output 
+-- like Postgres, but we can see how it handles AND conditions with indexes.
+
+DROP TABLE IF EXISTS products;
+CREATE TABLE products (id INTEGER PRIMARY KEY, category TEXT, status TEXT);
+CREATE INDEX idx_cat ON products(category);
+CREATE INDEX idx_stat ON products(status);
+
+-- SQLite will pick the most restrictive index, or use an internal intersection
+EXPLAIN QUERY PLAN SELECT * FROM products WHERE category = 'laptop' AND status = 'active';`
+        }
+    ]
+}
+];
+
+// Initialize UI
+function init() {
+    renderSidebar();
+    loadSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` })
+        .then(SQL => {
+            db = new SQL.Database();
+            db.run("PRAGMA foreign_keys = ON;");
+            selectSlide(0, 0);
+        }).catch(err => {
+            document.getElementById('slideTitle').textContent = "Failed to load SQLite WASM";
+            console.error(err);
+        });
+}
+
+function renderSidebar() {
+    const list = document.getElementById('chapterList');
+    list.innerHTML = chapters.map((ch, cIdx) => `
+        <div class="chapter-group">
+            <div class="chapter-title">${ch.title}</div>
+            ${ch.slides.map((sl, sIdx) => `
+                <div class="slide-item ${cIdx === 0 && sIdx === 0 ? 'active' : ''}" 
+                     id="slide_${cIdx}_${sIdx}" 
+                     onclick="selectSlide(${cIdx}, ${sIdx})">
+                    <span class="slide-num">${sIdx + 1}.</span>
+                    <span>${sl.title}</span>
+                </div>
+            `).join('')}
+        </div>
+    `).join('');
+}
+
+function selectSlide(cIdx, sIdx) {
+    currentChapterIdx = cIdx;
+    currentSlideIdx = sIdx;
+    
+    document.querySelectorAll('.slide-item').forEach(el => el.classList.remove('active'));
+    const activeEl = document.getElementById(`slide_${cIdx}_${sIdx}`);
+    if (activeEl) activeEl.classList.add('active');
+
+    const slide = chapters[cIdx].slides[sIdx];
+    document.getElementById('slideTitle').textContent = slide.title;
+    document.getElementById('slideSubtitle').textContent = slide.subtitle;
+    document.getElementById('theoryPane').innerHTML = slide.theory;
+    document.getElementById('sqlEditor').value = slide.sql.trim();
+
+    resetCurrentSlide();
+}
+
+function resetCurrentSlide() {
+    if (!db) return;
+    const SQL = db.constructor;
+    db.close();
+    db = new SQL();
+    db.run("PRAGMA foreign_keys = ON;");
+    
+    document.getElementById('sqlEditor').value = chapters[currentChapterIdx].slides[currentSlideIdx].sql.trim();
+    runSQL();
+}
+
+function runSQL() {
+    if (!db) return;
+    const sqlText = document.getElementById('sqlEditor').value;
+    const resArea = document.getElementById('resultsArea');
+    const startTime = performance.now();
+
+    try {
+        const results = db.exec(sqlText);
+        const elapsed = (performance.now() - startTime).toFixed(1);
+
+        if (results.length === 0) {
+            resArea.innerHTML = `<div class="status-msg status-success">✅ Statements executed successfully (${elapsed}ms).</div>`;
+            return;
+        }
+
+        let html = `<div class="status-msg status-success">✅ Query execution completed in ${elapsed}ms</div>`;
+        results.forEach(res => {
+            html += `<table><thead><tr>${res.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+            res.values.forEach(row => {
+                html += `<tr>${row.map(v => `<td>${v === null ? '<i style="color:var(--text2)">NULL</i>' : v}</td>`).join('')}</tr>`;
+            });
+            html += `</tbody></table><br>`;
+        });
+        resArea.innerHTML = html;
+    } catch (err) {
+        resArea.innerHTML = `<div class="status-msg status-error">❌ Execution Error: ${err.message}</div>`;
+    }
+}
+
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runSQL();
+    }
+});
+
+window.onload = init;
+</script>
+</body>
+</html>

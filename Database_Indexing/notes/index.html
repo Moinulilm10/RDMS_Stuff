@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Indexing Notes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --paper-bg: #fdfbf7;
+            --lines-color: rgba(148, 163, 184, 0.25);
+            --margin-line: #fca5a5;
+            
+            --ink-black: #1e293b;
+            --ink-blue: #0369a1;
+            --ink-red: #be123c;
+            --ink-green: #15803d;
+            --ink-purple: #6b21a8;
+
+            /* Highlighters */
+            --hl-yellow: rgba(253, 224, 71, 0.45);
+            --hl-pink: rgba(249, 168, 212, 0.45);
+            --hl-green: rgba(134, 239, 172, 0.45);
+            --hl-blue: rgba(147, 197, 253, 0.45);
+            --hl-purple: rgba(216, 180, 254, 0.45);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Patrick Hand', cursive;
+            color: var(--ink-black);
+            font-size: 22px;
+            line-height: 1.8;
+            padding: 3rem 1rem;
+        }
+
+        /* Nav */
+        .nav-back {
+            display: inline-block;
+            margin-bottom: 2rem;
+            text-decoration: none;
+            color: #475569;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+        .nav-back:hover { color: #000; text-decoration: underline; }
+
+        /* The Notebook Paper */
+        .notebook {
+            background-color: var(--paper-bg);
+            max-width: 900px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.05);
+            border-radius: 4px;
+            position: relative;
+            padding: 3rem 3rem 4rem 5rem; /* Left padding for margin line */
+            background-image: repeating-linear-gradient(
+                transparent, 
+                transparent 39px, 
+                var(--lines-color) 39px, 
+                var(--lines-color) 40px
+            );
+            background-position: 0 3rem;
+            min-height: 1100px;
+        }
+
+        /* The Red Margin Line */
+        .notebook::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0; left: 3.5rem;
+            width: 2px;
+            background-color: var(--margin-line);
+        }
+
+        /* Spiral Binding Effects */
+        .spiral-container {
+            position: absolute;
+            left: -15px;
+            top: 50px;
+            bottom: 50px;
+            width: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 10;
+        }
+        .hole {
+            width: 20px; height: 20px;
+            background: var(--bg-color);
+            border-radius: 50%;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .hole::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 5px;
+            width: 25px; height: 12px;
+            border: 3px solid #cbd5e1;
+            border-radius: 50%;
+            transform: translateY(-50%) rotate(15deg);
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Typography & Handwriting Styles */
+        h1 {
+            font-family: 'Caveat', cursive;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--ink-blue);
+            text-align: center;
+            margin-bottom: 2rem;
+            line-height: 1.2;
+            transform: rotate(-1deg);
+        }
+
+        h2 {
+            font-family: 'Caveat', cursive;
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--ink-red);
+            margin-top: 2rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 2px dashed rgba(190, 18, 60, 0.3);
+            display: inline-block;
+            transform: rotate(-0.5deg);
+        }
+
+        p { margin-bottom: 1.2rem; text-indent: 1.5rem; }
+        
+        ul, ol { margin-left: 2.5rem; margin-bottom: 1.5rem; }
+        li { margin-bottom: 0.5rem; }
+
+        .hand-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--ink-purple);
+            background: rgba(255,255,255,0.6);
+            border: 1px dashed var(--lines-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8em;
+            color: var(--ink-purple);
+            background: rgba(255,255,255,0.7);
+            border: 2px solid var(--lines-color);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            box-shadow: 2px 4px 10px rgba(0,0,0,0.05);
+            transform: rotate(0.5deg);
+            line-height: 1.5;
+        }
+
+        /* Highlighters */
+        .hl { border-radius: 4px; padding: 0 4px; display: inline; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+        .hl-yellow { background-color: var(--hl-yellow); }
+        .hl-pink { background-color: var(--hl-pink); }
+        .hl-green { background-color: var(--hl-green); }
+        .hl-blue { background-color: var(--hl-blue); }
+        .hl-purple { background-color: var(--hl-purple); }
+
+        .sticky-note {
+            float: right;
+            background: #fef08a;
+            width: 250px;
+            padding: 1rem;
+            margin: 0 0 1rem 2rem;
+            box-shadow: 3px 5px 15px rgba(0,0,0,0.15);
+            transform: rotate(3deg);
+            font-size: 20px;
+            color: #854d0e;
+            border-top-left-radius: 20px 5px;
+            border-bottom-right-radius: 10px 30px;
+        }
+        
+        .sticky-note-blue {
+            background: #bae6fd;
+            color: #0c4a6e;
+            transform: rotate(-2deg);
+            clear: both;
+        }
+
+        /* Print formatting */
+        @media print {
+            body { background: none; padding: 0; }
+            .nav-back, .spiral-container { display: none; }
+            .notebook { box-shadow: none; border: none; margin: 0; padding: 2rem 2rem 2rem 4rem; max-width: none; }
+            @page { margin: 1cm; size: A4 portrait; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="../index.html" class="nav-back">← Back to Index Hub</a>
+
+    <div class="notebook">
+        <!-- Visual spiral binding holes -->
+        <div class="spiral-container">
+            <div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div>
+            <div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div>
+            <div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div>
+            <div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div>
+            <div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div>
+        </div>
+
+        <h1>Stage 4: Database Indexing</h1>
+
+        <div class="sticky-note">
+            <strong>Mental Model:</strong><br>
+            An index is exactly like the index at the back of a textbook. It's a sorted copy of specific columns pointing back to the physical page numbers (Row IDs).
+        </div>
+
+        <h2>1. The Write Tax (Crucial!)</h2>
+        <p>Before making an index, you must understand <span class="hl hl-pink">The Write Tax</span>. Indexes speed up reads, but they severely slow down writes!</p>
+        <p>If a table has 10 indexes, a single <span class="hand-code">INSERT</span> into the table requires <strong>11 physical disk writes!</strong> (1 write for the heap table, and 10 writes to update the B+ Tree for every single index). <em>Never over-index!</em></p>
+
+        <h2>2. Advanced Index Structures</h2>
+        <p>While B+ Trees are standard, modern databases (like PostgreSQL) offer specialized structures for complex data:</p>
+        <ul>
+            <li><span class="hl hl-green">GIN (Generalized Inverted Index):</span> Used for <span class="hand-code">JSONB</span>, Arrays, and Full-Text Search. Instead of indexing a whole document, it indexes <em>every single word/key</em> and points to a list of rows containing that element.</li>
+            <li><span class="hl hl-blue">GiST (Generalized Search Tree):</span> Used for geospatial shapes (PostGIS). It operates on overlapping bounding boxes. If two shapes overlap, GiST helps find candidates fast!</li>
+            <li><span class="hl hl-purple">BRIN (Block Range Index):</span> Used for massive, naturally sorted time-series tables (e.g., IoT logs). Instead of indexing every single row, it stores the MIN/MAX timestamp for every 1MB physical block on disk. This index is <span class="hl hl-yellow">tiny in RAM</span> but allows skipping massive amounts of irrelevant disk blocks.</li>
+        </ul>
+
+        <h2>3. Reading Execution Plans</h2>
+        <p>The Cost-Based Optimizer (CBO) decides if your index is actually worth using by calculating <span class="hl hl-yellow">Selectivity</span> (how many rows will match the filter).</p>
+        
+        <div class="code-block">EXPLAIN ANALYZE SELECT * FROM users WHERE status = 'active';</div>
+
+        <ul>
+            <li><strong>Index Scan:</strong> The CBO traverses the B+ Tree, finds the row pointer, and fetches the row from the heap. Great for high-selectivity (rare) queries!</li>
+            <li><strong>Seq Scan (Full Table Scan):</strong> The CBO <span class="hl hl-pink">IGNORES your index!</span> If the query returns 30% of the table, jumping back and forth between the index and the heap (Random I/O) is slower than just reading the entire table sequentially from start to finish!</li>
+        </ul>
+
+        <div class="sticky-note sticky-note-blue" style="margin-top: 1rem;">
+            <strong>Bitmap Index Scans:</strong><br>
+            If you have two indexes (e.g., age, city) and a query with an AND clause, Postgres scans both indexes, builds an in-memory bit-array for each, performs a fast bitwise AND in RAM, and then fetches the matching rows from disk sequentially!
+        </div>
+
+        <h2>4. Covering & Partial Indexes</h2>
+        <p>If you have an API endpoint that only needs a user's status: <span class="hand-code">SELECT status FROM users WHERE id = 5;</span></p>
+        <p>You can create a <span class="hl hl-blue">Covering Index</span>: <span class="hand-code">CREATE INDEX idx_user ON users(id) INCLUDE (status);</span>. The database never has to touch the physical table! It answers the query entirely from the Index Leaf Node (an <span class="hl hl-green">Index-Only Scan</span>).</p>
+        
+        <p>A <span class="hl hl-purple">Partial Index</span> saves space by only indexing a subset: <span class="hand-code">CREATE INDEX idx_pending ON tasks(date) WHERE state = 'pending';</span>. This index is tiny, fast, and stays cached in RAM!</p>
+
+    </div>
+
+</body>
+</html>
